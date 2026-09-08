@@ -77,6 +77,14 @@ export async function getAccessTokenForUser(
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        "Your Atomberg API Key or Refresh Token is expired or invalid. Please update your credentials."
+      );
+    }
+    if (response.status === 429) {
+      throw new Error("Atomberg rate limit reached. Please wait a few moments and try again.");
+    }
     throw new Error(
       `Failed to get access token from Atomberg (status ${response.status}): ${errorText}`
     );

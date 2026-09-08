@@ -155,32 +155,35 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : isError ? (
-            <div className="p-8 rounded-[20px] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow)] text-center space-y-4">
-              <AlertCircle className="w-10 h-10 text-[var(--danger)] mx-auto" />
-              <div className="space-y-1">
-                <h3 className="text-[17px] font-bold text-[var(--text)]">
-                  Unable to load fan state
+            <div className="p-8 rounded-[22px] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow)] text-center space-y-4">
+              <div className="w-12 h-12 rounded-[16px] bg-[var(--surface-2)] text-[var(--danger)] flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1.5 max-w-md mx-auto">
+                <h3 className="text-[17px] font-bold text-[var(--text)] tracking-tight">
+                  Unable to connect to Atomberg
                 </h3>
-                <p className="text-[13px] text-[var(--text-secondary)] max-w-md mx-auto">
+                <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
                   {error instanceof Error
                     ? error.message
                     : "Failed to connect to Atomberg Cloud. Please check your credentials."}
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-3 pt-1">
+                <Link
+                  href="/connect"
+                  className="px-4 py-2.5 text-[13px] font-semibold rounded-[12px] bg-[var(--accent)] text-white hover:bg-[var(--accent-press)] transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  <span>Update Credentials</span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => refetch()}
-                  className="px-4 py-2 text-[13px] font-semibold rounded-[10px] bg-[var(--accent)] text-white hover:bg-[var(--accent-press)] transition-colors cursor-pointer border-0"
+                  className="px-4 py-2.5 text-[13px] font-semibold rounded-[12px] bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--border)] transition-colors cursor-pointer"
                 >
                   Retry
                 </button>
-                <Link
-                  href="/connect"
-                  className="px-4 py-2 text-[13px] font-semibold rounded-[10px] bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--border)] transition-colors"
-                >
-                  Check Credentials
-                </Link>
               </div>
             </div>
           ) : fans.length === 0 ? (
