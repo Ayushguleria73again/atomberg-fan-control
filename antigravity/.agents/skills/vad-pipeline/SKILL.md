@@ -32,15 +32,26 @@ vad.start();  // vad.pause() to stop; pause during TTS to avoid self-hearing
 ```
 Expose the 5 tuning params in `/settings` — they must be dialed against the real fans.
 
-## Stage 2 — Wake word (optional)
-Default: **skip it**; use a "hands-free mode" toggle. If wanted later: Porcupine (free personal tier, easy custom word, best DX) or openWakeWord (open, but pretrained models are non-commercial → train your own). Run the wake word first; only start VAD→STT after it fires.
+## Stage 3 — STT: free, on-device Whisper (CHOSEN)
+**Transformers.js Whisper — no API key, audio never leaves the device, offline after first download.**
+```bash
+npm i @huggingface/transformers
+```
+```ts
+import { pipeline } from "@huggingface/transformers";
+const transcriber = await pipeline("automatic-speech-recognition",
+  "Xenova/whisper-base.en", { device: "webgpu" }); // falls back to wasm
+const { text } = await transcriber(audio);           // audio = Float32Array @16kHz from VAD
+```
+- Load the pipeline ONCE (lazy) + reuse; show a one-time "downloading voice model…" state. No server route, no STT secret.
+- Model: `whisper-base.en` default; `whisper-tiny.en` on weak phones; `whisper-small.en` for more accuracy.
+- WebGPU is great on Chrome/Edge desktop+Android; **iOS Safari WebGPU is limited** → falls back to WASM (use tiny) or the fallbacks below.
+- Fallbacks (only if a device can't run it): VAD-gated Web Speech API (free), or Groq Whisper via a server route with `GROQ_API_KEY` (free tier) — server-side key only.
 
-## Stage 3 — STT (server-side key)
-Default **Groq Whisper Large v3 Turbo** (fast, cheap, cross-browser; VAD already endpointed so no streaming needed).
-1. Client: encode the `Float32Array` → 16-bit PCM WAV Blob (16kHz mono).
-2. `POST /api/voice/transcribe` (multipart) with the audio.
-3. Server route: forward to Groq with `GROQ_API_KEY` (server env), model `whisper-large-v3-turbo`; return `{ text }`.
-Fallback tier: VAD gates the Web Speech API (free, weaker on iOS). Upgrade path: Deepgram Nova-3/Flux for live partials.
+## Stage 2 — "Hey Fan" wake word (CHOSEN, free)
+Do NOT use Porcupine's free custom words — they're personal-only, expire in 30 days, and aren't licensed for Web. Free paths:
+- **Software wake word (default):** always-on VAD → transcribe each segment on-device (free) → if transcript starts with "hey fan"/"ok fan"/"fan", strip the prefix and treat the rest as the command; else ignore. Pause the loop while acting/speaking (barge-in).
+- **openWakeWord (low-power alt):** ship a small "hey fan" ONNX model, run via onnxruntime-web, gate VAD→STT on it. Pretrained models are CC-BY-NC-SA (non-commercial = fine for this personal app).
 
 ## Stage 4 — Intent + feedback
 - Reuse `lib/intents.ts`; two "Hall" fans → disambiguate (see `docs/10`).

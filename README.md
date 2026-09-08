@@ -52,17 +52,36 @@ Full reasoning is in [docs/02-architecture.md](docs/02-architecture.md). Home As
 
 ---
 
-## Quick start (human tasks — do these first)
+## Running Locally & Deploying
 
-1. ✅ **Atomberg API credentials — done.** Enabled in the Atomberg Home app; API key + refresh token are in `.env.local` (git-ignored) and verified working. Your 4 fans are captured in [docs/10-your-devices.md](docs/10-your-devices.md).
-2. *(optional)* **Rename your fans** in the Atomberg app for clean, distinct voice names (two are both "Hall" right now).
-3. **Hand this repo to Antigravity** and follow [HOW-TO-USE-WITH-ANTIGRAVITY.md](HOW-TO-USE-WITH-ANTIGRAVITY.md) — it builds the app from `docs/` following [docs/08-roadmap.md](docs/08-roadmap.md).
+### 1. Local Development
+```bash
+# 1. Install dependencies
+npm install
 
-Everything else — the web app, the server-side Atomberg client, caching, voice, and UI — is Antigravity's job, guided by these docs.
+# 2. Configure .env.local (copy from .env.example)
+# ATOMBERG_API_KEY=...
+# ATOMBERG_REFRESH_TOKEN=...
+# APP_PASSCODE=your_secret_passcode
+
+# 3. Start development server
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000). Enter your `APP_PASSCODE` to unlock the dashboard.
+
+### 2. Deploying to Vercel
+1. Push this repository to GitHub.
+2. Import project in [Vercel](https://vercel.com).
+3. Under **Project Settings → Environment Variables**, add:
+   - `ATOMBERG_API_KEY`
+   - `ATOMBERG_REFRESH_TOKEN`
+   - `APP_PASSCODE` (sets your gate passcode)
+4. Deploy! Open the Vercel URL on mobile and tap **Add to Home Screen** to install the PWA.
 
 ---
 
 ## Status of the technical facts in these docs
 
-- ✅ **Verified** from Atomberg's developer portal and open-source integrations: base URL, auth flow, the four core endpoints, and the `power` / `speed` / `led` commands.
-- ⚠️ **Confirm against your model:** `sleep`, `timer`, and LED brightness/color commands vary by fan series. The docs flag these clearly. Verify with a `get_device_state` call before relying on them — see [docs/03-atomberg-api.md](docs/03-atomberg-api.md).
+- ✅ **Verified** from Atomberg's developer portal and live fan tests: base URL, auth flow, endpoints, `power`, `speed` (1–6), `led`, `sleep` mode, and `timer` presets.
+- 🔒 **Security**: All API routes and dashboard views are protected by server-side Edge middleware requiring `APP_PASSCODE` authentication. Secrets remain exclusively on the server.
+

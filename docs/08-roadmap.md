@@ -46,13 +46,15 @@ Phased plan for Antigravity. Complete and verify each phase (✅ gate) before th
 
 ## Phase 6 — High-end hands-free voice (VAD) — optional upgrade
 Design: [docs/12-voice-vad-architecture.md](12-voice-vad-architecture.md); build with the `vad-pipeline` skill. Do this after Phase 5 (needs HTTPS + deploy for a real test).
+Chosen stack: **fully on-device + free** (no audio leaves the browser). Details in the doc / `vad-pipeline` skill.
 - [ ] Add Silero VAD (`@ricky0123/vad-web`) for on-device endpointing; a "hands-free mode" toggle starts/stops it.
 - [ ] Expose the 5 VAD tuning params in `/settings`; tune against the real fans (noisy room).
-- [ ] `POST /api/voice/transcribe` → Groq Whisper (server-side `GROQ_API_KEY`); client encodes the VAD segment to 16k WAV. Keep Web Speech API as the free fallback.
-- [ ] Route the transcript through the existing `lib/intents.ts` + `/api/fans/:id/cmd`.
-- [ ] Pause VAD during TTS (barge-in); clear listening indicator; transcript display.
-- [ ] (Later, optional) wake word "Hey Fan" via Porcupine.
-- ✅ **Gate:** hands-free — I speak a command with no button and the right fan responds within ~1s, robust to fan/background noise.
+- [ ] On-device transcription with **Transformers.js Whisper** (`Xenova/whisper-base.en`, WebGPU → WASM fallback; `tiny.en` on weak phones). No API key, no server route. Show a one-time "downloading voice model" state.
+- [ ] **"Hey Fan" software wake word:** match the wake prefix on the on-device transcript, strip it, pass the rest on. (openWakeWord as a low-power alternative later.)
+- [ ] Route the command text through the existing `lib/intents.ts` + `/api/fans/:id/cmd`.
+- [ ] Pause the listen loop during TTS (barge-in); clear listening indicator; transcript display.
+- [ ] Graceful fallback where WebGPU/on-device can't cope (iOS Safari): Web Speech API, or optional Groq free-tier via a server route.
+- ✅ **Gate:** hands-free — I say "Hey Fan, turn on the balcony fan" with no button and the right fan responds within ~1s, robust to fan/background noise, with no audio leaving the device.
 
 ## Definition of done
 Matches [01-overview.md](01-overview.md#success-criteria): fast, correct state, working voice, zero leaked secrets, comfortably within the API quota. (Phase 6 hands-free voice is an optional enhancement beyond the v1 bar.)

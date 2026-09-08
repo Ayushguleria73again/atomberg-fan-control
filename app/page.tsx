@@ -15,6 +15,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { ConnectionBadge } from "@/components/ConnectionBadge";
 import { TurnAllOffButton } from "@/components/TurnAllOffButton";
 import { VoiceButton } from "@/components/VoiceButton";
+import { LogoutButton } from "@/components/LogoutButton";
 import { FansApiResponse } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -100,6 +101,7 @@ export default function DashboardPage() {
             onRefresh={handleManualRefresh}
             isFetching={isManualRefreshing || isLoading}
           />
+          <LogoutButton />
         </div>
       </header>
 
