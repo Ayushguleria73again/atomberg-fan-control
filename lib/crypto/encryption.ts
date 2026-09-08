@@ -15,8 +15,7 @@ function getMasterKey(): Buffer {
 }
 
 export interface EncryptedCredentialsRecord {
-  encApiKey: string;
-  encRefreshToken: string;
+  encCredentials: string;
   iv: string;
   authTag: string;
   keyVersion: number;
@@ -24,7 +23,7 @@ export interface EncryptedCredentialsRecord {
 
 /**
  * Encrypts API Key and Refresh Token together as an authenticated JSON blob.
- * A fresh 12-byte IV is generated on every call.
+ * A fresh 12-byte IV is generated on every encryption call.
  */
 export function encryptCredentials(
   apiKey: string,
@@ -45,10 +44,8 @@ export function encryptCredentials(
   ]);
   const authTag = cipher.getAuthTag();
 
-  const ctBase64 = ciphertext.toString("base64");
   return {
-    encApiKey: ctBase64,
-    encRefreshToken: ctBase64, // bundled under unified authenticated ciphertext
+    encCredentials: ciphertext.toString("base64"),
     iv: iv.toString("base64"),
     authTag: authTag.toString("base64"),
     keyVersion: KEY_VERSION,
@@ -59,14 +56,14 @@ export function encryptCredentials(
  * Decrypts the stored AES-256-GCM ciphertext payload and returns { apiKey, refreshToken }.
  */
 export function decryptCredentials(record: {
-  encApiKey: string;
+  encCredentials: string;
   iv: string;
   authTag: string;
 }): { apiKey: string; refreshToken: string } {
   const masterKey = getMasterKey();
   const iv = Buffer.from(record.iv, "base64");
   const authTag = Buffer.from(record.authTag, "base64");
-  const ciphertext = Buffer.from(record.encApiKey, "base64");
+  const ciphertext = Buffer.from(record.encCredentials, "base64");
 
   const decipher = createDecipheriv("aes-256-gcm", masterKey, iv);
   decipher.setAuthTag(authTag);

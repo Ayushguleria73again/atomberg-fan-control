@@ -36,7 +36,7 @@ async function getUserCredentials(userId: string): Promise<{ apiKey: string; ref
 
   const conn = rows[0];
   const creds = decryptCredentials({
-    encApiKey: conn.encApiKey,
+    encCredentials: conn.encCredentials,
     iv: conn.iv,
     authTag: conn.authTag,
   });
@@ -268,7 +268,6 @@ export async function sendFanCommandForUser(
   deviceId: string,
   command: Record<string, unknown>
 ): Promise<{ ok: boolean; responseData?: unknown }> {
-  // 1. Verify ownership: get the user's known or cached fans
   let state = getCachedFanState(userId);
   if (!state) {
     state = await getFansStateForUser(userId, false);

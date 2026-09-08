@@ -17,26 +17,26 @@ export function ConnectionBadge() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-muted-foreground bg-secondary/60 rounded-full border border-border/50">
-        <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-        <span>Connecting...</span>
+      <div className="flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium text-[var(--text-secondary)] bg-[var(--surface-2)] rounded-full border border-[var(--border)]">
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
+        <span>Checking…</span>
       </div>
     );
   }
 
-  if (isError || !data?.authenticated) {
+  if (isError || data?.status !== "ok") {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-rose-300 bg-rose-950/40 rounded-full border border-rose-800/50">
-        <CloudOff className="w-3.5 h-3.5 text-rose-400" />
-        <span>Disconnected</span>
+      <div className="flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium text-[var(--danger)] bg-[var(--surface-2)] rounded-full border border-[var(--border)]">
+        <CloudOff className="w-3.5 h-3.5 text-[var(--danger)]" />
+        <span>Offline</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-emerald-300 bg-emerald-950/40 rounded-full border border-emerald-800/50">
-      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-      <Cloud className="w-3.5 h-3.5 text-emerald-400" />
+    <div className="flex items-center gap-1.5 px-3 py-1 text-[12px] font-medium text-[var(--success)] bg-[var(--surface-2)] rounded-full border border-[var(--border)]">
+      <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
+      <Cloud className="w-3.5 h-3.5 text-[var(--success)]" />
       <span>Cloud Ready</span>
     </div>
   );

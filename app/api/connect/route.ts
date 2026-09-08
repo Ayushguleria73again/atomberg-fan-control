@@ -28,7 +28,6 @@ async function validateAtombergCredentials(
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
       let message = "Invalid API key or refresh token. Atomberg rejected the credentials.";
       if (res.status === 401 || res.status === 403) {
         message = "Authentication failed. Please check that your API Key and Refresh Token are correct.";
@@ -118,8 +117,7 @@ export async function POST(req: NextRequest) {
       .insert(atombergConnections)
       .values({
         userId: session.userId,
-        encApiKey: encrypted.encApiKey,
-        encRefreshToken: encrypted.encRefreshToken,
+        encCredentials: encrypted.encCredentials,
         iv: encrypted.iv,
         authTag: encrypted.authTag,
         keyVersion: encrypted.keyVersion,
@@ -129,8 +127,7 @@ export async function POST(req: NextRequest) {
       .onConflictDoUpdate({
         target: atombergConnections.userId,
         set: {
-          encApiKey: encrypted.encApiKey,
-          encRefreshToken: encrypted.encRefreshToken,
+          encCredentials: encrypted.encCredentials,
           iv: encrypted.iv,
           authTag: encrypted.authTag,
           keyVersion: encrypted.keyVersion,

@@ -16,6 +16,7 @@ import {
   Loader2,
   ExternalLink,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 
 export default function ConnectPage() {
@@ -112,7 +113,7 @@ export default function ConnectPage() {
 
   return (
     <div className="w-full max-w-md mx-auto py-6 px-4 space-y-6">
-      {/* Back button & title */}
+      {/* Back button & title bar with Theme Toggle */}
       <div className="flex items-center justify-between">
         <Link
           href="/"
@@ -121,9 +122,7 @@ export default function ConnectPage() {
           <ArrowLeft className="w-4 h-4" />
           <span>Back</span>
         </Link>
-        <span className="text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-          BYOK Setup
-        </span>
+        <ThemeToggle />
       </div>
 
       {/* Header card */}

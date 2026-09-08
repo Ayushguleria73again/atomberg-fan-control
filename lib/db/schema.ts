@@ -5,7 +5,7 @@ import { pgTable, text, timestamp, integer, uuid } from "drizzle-orm/pg-core";
  * Holds user account records created during signup.
  */
 export const users = pgTable("users", {
-  id: text("id").primaryKey(), // unique user identifier (e.g. uuid / csuid)
+  id: text("id").primaryKey(), // unique user identifier (uuid)
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash"),
   name: text("name"),
@@ -17,7 +17,8 @@ export const users = pgTable("users", {
 /**
  * Atomberg Connections Table
  * Multi-tenant credential store.
- * NEVER has plaintext secret columns — only encrypted ciphertexts and GCM metadata.
+ * Stores authenticated AES-256-GCM encrypted payload and per-record GCM parameters.
+ * NO plaintext secret columns.
  */
 export const atombergConnections = pgTable("atomberg_connections", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -25,8 +26,7 @@ export const atombergConnections = pgTable("atomberg_connections", {
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
-  encApiKey: text("enc_api_key").notNull(),
-  encRefreshToken: text("enc_refresh_token").notNull(),
+  encCredentials: text("enc_credentials").notNull(),
   iv: text("iv").notNull(),
   authTag: text("auth_tag").notNull(),
   keyVersion: integer("key_version").default(1).notNull(),
