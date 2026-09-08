@@ -45,7 +45,10 @@ Full reasoning is in [docs/02-architecture.md](docs/02-architecture.md). Home As
 | [docs/09-antigravity-skills.md](docs/09-antigravity-skills.md) | **How to add skills to Antigravity** (paths, SKILL.md, triggering) |
 | [docs/10-your-devices.md](docs/10-your-devices.md) | **Your 4 fans** — live-verified device IDs + confirmed state schema |
 | [docs/11-raspberry-pi-haos-walkthrough.md](docs/11-raspberry-pi-haos-walkthrough.md) | *(future upgrade, not v1)* Home Assistant on Raspberry Pi |
-| [docs/12-voice-vad-architecture.md](docs/12-voice-vad-architecture.md) | **High-end hands-free voice** — Silero VAD + wake word + cloud STT |
+| [docs/12-voice-vad-architecture.md](docs/12-voice-vad-architecture.md) | **High-end hands-free voice** — Silero VAD + wake word + on-device Whisper |
+| [docs/13-multitenant-byok.md](docs/13-multitenant-byok.md) | **Public product** — multi-tenant BYOK: accounts + per-user Atomberg creds |
+| [docs/14-credential-security.md](docs/14-credential-security.md) | **Mandatory security** — encrypting stored user credentials |
+| [docs/15-design-system.md](docs/15-design-system.md) | **UI design system** — clean/minimal Apple-like, mobile-first, light+dark |
 | [antigravity/AGENTS.md](antigravity/AGENTS.md) | Project rules Antigravity loads every session |
 | [antigravity/.agents/skills/](antigravity/.agents/skills/) | Antigravity skills: `atomberg-api`, `voice-intent`, `webapp-conventions` (+ dormant `home-assistant`) |
 | [HOW-TO-USE-WITH-ANTIGRAVITY.md](HOW-TO-USE-WITH-ANTIGRAVITY.md) | **Start here** — how to load these into Antigravity and drive the build |

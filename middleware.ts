@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME, isValidSession } from "./lib/auth";
+import { getRequestUserSession } from "./lib/auth/session";
 
 export const config = {
   matcher: [
@@ -16,31 +16,29 @@ export const config = {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const isAuthValid = await isValidSession(sessionCookie);
+  const session = await getRequestUserSession(request);
+  const isAuthenticated = Boolean(session);
 
-  // If path is /login or /api/auth, allow access
-  if (pathname === "/login" || pathname === "/api/auth") {
-    // If already authenticated and trying to access /login, redirect to /
-    if (pathname === "/login" && isAuthValid && process.env.APP_PASSCODE) {
+  // Public authentication routes
+  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isAuthApi = pathname.startsWith("/api/auth");
+
+  if (isAuthPage || isAuthApi) {
+    // If already authenticated and trying to access /login or /signup, redirect to dashboard
+    if (isAuthPage && isAuthenticated) {
       return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
 
-  // If passcode is not set, allow access
-  if (!process.env.APP_PASSCODE) {
-    return NextResponse.next();
-  }
-
-  // If session is NOT valid:
-  if (!isAuthValid) {
-    // Return 401 JSON for all /api/* routes
+  // Unauthenticated handling
+  if (!isAuthenticated) {
+    // Reject all /api/* routes with 401 JSON
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Unauthorized: A valid passcode session is required to access FanControl APIs.",
+          error: "Authentication required. Please sign in to FanControl.",
         },
         { status: 401 }
       );

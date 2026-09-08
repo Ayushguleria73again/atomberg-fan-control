@@ -61,3 +61,35 @@ Matches [01-overview.md](01-overview.md#success-criteria): fast, correct state, 
 
 ## Future upgrade (not v1)
 If stale-state-after-Alexa/remote ever bothers you, add the **Home Assistant** hub ([04](04-home-assistant-setup.md) / [11](11-raspberry-pi-haos-walkthrough.md)) for instant local state and no daily-call cap. The app's `/api/*` contract barely changes — only `lib/atomberg.ts` gets swapped for an HA client.
+
+---
+
+## Multi-tenant product track
+
+Turns the personal app into a **public BYOK product**: accounts + encrypted per-user Atomberg credentials. Design: [docs/13](13-multitenant-byok.md); security requirements (mandatory): [docs/14](14-credential-security.md). Build with the `multitenant-byok` skill. **Do the security work in the same phase as the feature — not after.**
+
+### Phase A — Auth + database
+- [ ] Provision auth (Clerk or Auth.js) + Neon Postgres via **Vercel Marketplace** (`vercel integration` / marketplace skill).
+- [ ] Sign up / log in / log out; protected app shell. Replace the `APP_PASSCODE` gate.
+- [ ] `users` + `atomberg_connections` schema (no plaintext secret columns).
+- ✅ **Gate:** a new user can register and reach an empty "connect your fans" state.
+
+### Phase B — Encrypted credential connect flow
+- [ ] `CREDENTIAL_ENCRYPTION_KEY` (32B base64) in env; `encryptSecret`/`decryptSecret` (AES-256-GCM) per [docs/14](14-credential-security.md).
+- [ ] `/connect`: validate creds via Atomberg `get_access_token` → encrypt → store under the user. `DELETE /api/connect` to disconnect.
+- [ ] Never log/return secrets; scrub errors.
+- ✅ **Gate:** I connect my Atomberg account; the DB holds only ciphertext; my fans load.
+
+### Phase C — User-scoped control + isolation
+- [ ] `/api/fans` + `/api/fans/:id/cmd` resolve the caller's decrypted creds; per-user cache (Upstash) for quota.
+- [ ] **Ownership checks**: reject any device ID not in the caller's own list (403). Verify user A cannot see/command user B's fans.
+- [ ] Rate-limit `/api/connect` and command routes.
+- ✅ **Gate:** two test accounts are fully isolated; each controls only its own fans within its own ~100/day quota.
+
+### Phase D — Launch readiness
+- [ ] Account deletion (removes user + connections); disconnect flow.
+- [ ] Privacy policy + ToS pages.
+- [ ] Remove `ATOMBERG_*` and `APP_PASSCODE` from server env (creds now per-user).
+- [ ] Run the `security-review` skill; consider `/code-review ultra`.
+- [ ] **Verify Atomberg's developer ToS permits a hosted multi-tenant proxy** ([docs/13](13-multitenant-byok.md), [docs/14](14-credential-security.md)).
+- ✅ **Gate:** launch checklist in [docs/14](14-credential-security.md#launch-checklist-all-must-be-) fully green.

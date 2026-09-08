@@ -2,9 +2,10 @@
 
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Fan as FanIcon,
+  User,
   Mail,
   Lock,
   Eye,
@@ -13,12 +14,11 @@ import {
   ShieldCheck,
   AlertCircle,
   Loader2,
-  Sparkles,
 } from "lucide-react";
 
-function LoginForm() {
+function SignupForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,10 +33,11 @@ function LoginForm() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: name.trim() || undefined,
           email: email.trim(),
           password,
         }),
@@ -45,14 +46,13 @@ function LoginForm() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.error || "Login failed. Please check your credentials.");
+        throw new Error(data.error || "Registration failed.");
       }
 
-      const returnTo = searchParams.get("from") || "/";
-      router.push(returnTo);
+      router.push("/");
       router.refresh();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Authentication error";
+      const msg = err instanceof Error ? err.message : "Registration error";
       setErrorMessage(msg);
       setIsSubmitting(false);
     }
@@ -67,16 +67,36 @@ function LoginForm() {
         </div>
         <div>
           <h1 className="text-2xl font-black text-foreground tracking-tight">
-            Welcome to FanControl
+            Create an Account
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Sign in to manage your Atomberg smart ceiling fans
+            Get started with FanControl to manage your Atomberg fans
           </p>
         </div>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Full Name */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="name"
+            className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
+          >
+            <User className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Full Name (Optional)</span>
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ayush"
+            disabled={isSubmitting}
+            className="w-full px-3.5 py-2.5 text-sm rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50"
+          />
+        </div>
+
         {/* Email */}
         <div className="space-y-1.5">
           <label
@@ -93,7 +113,6 @@ function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
-            autoFocus
             disabled={isSubmitting}
             className="w-full px-3.5 py-2.5 text-sm rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50"
           />
@@ -106,7 +125,7 @@ function LoginForm() {
             className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
           >
             <Lock className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Password</span>
+            <span>Password (min 6 characters)</span>
           </label>
           <div className="relative">
             <input
@@ -116,6 +135,7 @@ function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              minLength={6}
               disabled={isSubmitting}
               className="w-full pl-3.5 pr-11 py-2.5 text-sm rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50"
             />
@@ -151,32 +171,32 @@ function LoginForm() {
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Signing In...</span>
+              <span>Creating Account...</span>
             </>
           ) : (
             <>
-              <span>Sign In</span>
+              <span>Sign Up & Continue</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}
         </button>
       </form>
 
-      {/* Switch to Signup */}
+      {/* Switch to Login */}
       <div className="text-center text-xs text-muted-foreground pt-1 border-t border-border/50">
-        Don't have an account yet?{" "}
+        Already have an account?{" "}
         <Link
-          href="/signup"
+          href="/login"
           className="font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-4 ml-1"
         >
-          Create account
+          Sign in
         </Link>
       </div>
     </div>
   );
 }
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] px-4">
       <Suspense
@@ -186,7 +206,7 @@ export default function LoginPage() {
           </div>
         }
       >
-        <LoginForm />
+        <SignupForm />
       </Suspense>
     </div>
   );

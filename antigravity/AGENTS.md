@@ -3,9 +3,12 @@
 Persistent context for every Antigravity session in this project. Read this and `docs/` before writing code.
 
 ## What we're building
-**A Next.js (App Router, TypeScript) PWA + browser voice control that talks DIRECTLY to the Atomberg Cloud API.** No Home Assistant, no hub. The app's server-side API routes call `api.developer.atomberg-iot.com`. Full spec in `docs/`. Follow the phased plan in `docs/08-roadmap.md`.
+**A Next.js (App Router, TypeScript) PWA + browser voice control for Atomberg fans, talking DIRECTLY to the Atomberg Cloud API** (`api.developer.atomberg-iot.com`) — no Home Assistant/hub. Full spec in `docs/`; phased plan in `docs/08-roadmap.md`.
 
-> Home Assistant docs (`docs/04`, `docs/11`, the `home-assistant` skill) are a **future upgrade path only — NOT used in v1.** Ignore them unless the user explicitly switches back.
+**PRODUCT MODE = public multi-tenant "bring your own key."** Anyone signs up, connects THEIR own Atomberg account, controls THEIR fans. Governing docs: **`docs/13-multitenant-byok.md`** (architecture) and **`docs/14-credential-security.md`** (MANDATORY security). Build with the `multitenant-byok` skill. The Atomberg API client logic (`atomberg-api` skill, `docs/03`) is reused, but **credentials now come from each user's encrypted DB record, not from server env**.
+
+> This app stores other people's home-control credentials. Security in `docs/14` is a hard requirement, not optional. Never log/return a token; encrypt at rest (AES-256-GCM); ownership-check every device action.
+> Home Assistant docs (`docs/04`, `docs/11`, `home-assistant` skill) are a future upgrade only — ignore unless the user switches back.
 
 ## Architecture rules (non-negotiable)
 - The **browser talks only to same-origin `/api/*`.** It never calls Atomberg directly (that would leak the API key and hit CORS).
@@ -24,6 +27,9 @@ Persistent context for every Antigravity session in this project. Read this and 
 - **Never** prefix a secret with `NEXT_PUBLIC_`; never read secrets in a client component; never return them in an API response.
 - `.env.local` is git-ignored; keep `.env.example` with empty values.
 - Validate all command input server-side (known device IDs, allowed actions, in-range values).
+
+## Design (always applies)
+UI is **clean, minimal, Apple-like, mobile-first, light + dark (auto + toggle)**. Follow `docs/15-design-system.md` and the `ui-design` skill for ALL visual work — tokens, type, spacing, components, motion. One accent color; no neon/glows/heavy shadows; build phone-first and scale up; ≥44px touch targets; honor safe-area insets and `prefers-reduced-motion`.
 
 ## Stack conventions
 - TypeScript (strict), Tailwind CSS, shadcn/ui where helpful, TanStack Query for fetching + optimistic updates.
