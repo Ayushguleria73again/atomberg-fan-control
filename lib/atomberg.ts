@@ -82,7 +82,7 @@ export async function getAccessTokenForUser(
     );
   }
 
-  const data = await response.json();
+  const data = await response.json().catch(() => null);
   const token = data?.message?.access_token || data?.data?.message?.access_token;
 
   if (!token || typeof token !== "string") {
@@ -205,7 +205,7 @@ export async function getFansStateForUser(
     );
   }
 
-  const data = await response.json();
+  const data = await response.json().catch(() => null);
   
   let rawList: RawAtombergState[] = [];
   if (Array.isArray(data?.message?.device_state)) {
@@ -303,6 +303,6 @@ export async function sendFanCommandForUser(
     );
   }
 
-  const resJson = await response.json();
+  const resJson = await response.json().catch(() => ({}));
   return { ok: true, responseData: resJson };
 }

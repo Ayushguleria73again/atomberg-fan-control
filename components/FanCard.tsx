@@ -38,12 +38,12 @@ export function FanCard({ fan }: FanCardProps) {
         body: JSON.stringify({ action, value }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to send command to fan");
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) {
+        throw new Error(data?.error || "Failed to send command to fan");
       }
 
-      return res.json();
+      return data;
     },
     onMutate: async ({ action, value }) => {
       await queryClient.cancelQueries({ queryKey: ["fans"] });

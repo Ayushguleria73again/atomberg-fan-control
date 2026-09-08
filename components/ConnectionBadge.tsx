@@ -9,8 +9,9 @@ export function ConnectionBadge() {
     queryKey: ["health"],
     queryFn: async () => {
       const res = await fetch("/api/health");
-      if (!res.ok) throw new Error("Health check failed");
-      return res.json();
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) throw new Error("Health check failed");
+      return data;
     },
     staleTime: 60_000,
   });

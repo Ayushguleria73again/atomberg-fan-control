@@ -37,8 +37,9 @@ export default function DashboardPage() {
     queryKey: ["authMe"],
     queryFn: async () => {
       const res = await fetch("/api/auth/me");
-      if (!res.ok) throw new Error("Failed to check auth status");
-      return res.json();
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) throw new Error(data?.error || "Failed to check auth status");
+      return data;
     },
   });
 
@@ -54,11 +55,11 @@ export default function DashboardPage() {
     queryKey: ["fans"],
     queryFn: async () => {
       const res = await fetch("/api/fans");
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to fetch fan data");
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) {
+        throw new Error(data?.error || "Failed to fetch fan data");
       }
-      return res.json();
+      return data;
     },
     enabled: authData?.authenticated && authData?.hasConnection !== false,
     staleTime: 45_000,
@@ -68,11 +69,10 @@ export default function DashboardPage() {
     try {
       setIsManualRefreshing(true);
       const res = await fetch("/api/fans?refresh=1");
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to refresh state from cloud");
+      const freshData = await res.json().catch(() => null);
+      if (!res.ok || !freshData) {
+        throw new Error(freshData?.error || "Failed to refresh state from cloud");
       }
-      const freshData: FansApiResponse = await res.json();
       queryClient.setQueryData(["fans"], freshData);
       toast.success("Fan status refreshed!");
     } catch (err: unknown) {

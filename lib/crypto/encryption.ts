@@ -2,6 +2,15 @@ import { randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
 
 export const KEY_VERSION = 1;
 
+export function isEncryptionConfigured(): boolean {
+  try {
+    getMasterKey();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getMasterKey(): Buffer {
   const keyBase64 = process.env.CREDENTIAL_ENCRYPTION_KEY;
   if (!keyBase64) {
@@ -9,7 +18,7 @@ function getMasterKey(): Buffer {
   }
   const key = Buffer.from(keyBase64, "base64");
   if (key.length !== 32) {
-    throw new Error(`CREDENTIAL_ENCRYPTION_KEY must be 32 bytes (got ${key.length} bytes)`);
+    throw new Error(`CREDENTIAL_ENCRYPTION_KEY must be exactly 32 bytes (got ${key.length} bytes)`);
   }
   return key;
 }

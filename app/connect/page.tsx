@@ -38,9 +38,9 @@ export default function ConnectPage() {
 
   useEffect(() => {
     fetch("/api/connect")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.connected) {
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (res.ok && data?.connected) {
           setExistingConnection(data);
         }
       })
@@ -69,9 +69,9 @@ export default function ConnectPage() {
         body: JSON.stringify({ apiKey, refreshToken }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Failed to verify and connect credentials.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Something went wrong. Please try again.");
       }
 
       toast.success("Atomberg account connected successfully!");
@@ -94,9 +94,9 @@ export default function ConnectPage() {
     setIsDisconnecting(true);
     try {
       const res = await fetch("/api/connect", { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Failed to disconnect account.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Something went wrong. Please try again.");
       }
 
       setExistingConnection(null);

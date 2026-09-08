@@ -45,11 +45,11 @@ export function TurnAllOffButton({ fans }: TurnAllOffButtonProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "power", value: false }),
         }).then(async (res) => {
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || `Failed to turn off ${fan.name}`);
+          const data = await res.json().catch(() => null);
+          if (!res.ok || !data) {
+            throw new Error(data?.error || `Failed to turn off ${fan.name}`);
           }
-          return res.json();
+          return data;
         })
       );
 

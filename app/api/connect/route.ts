@@ -3,7 +3,7 @@ import { getSessionFromCookie } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { atombergConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { encryptCredentials } from "@/lib/crypto/encryption";
+import { encryptCredentials, isEncryptionConfigured } from "@/lib/crypto/encryption";
 import { invalidateAccessToken, invalidateFanState } from "@/lib/cache";
 
 const ATOMBERG_BASE_URL = "https://api.developer.atomberg-iot.com";
@@ -51,12 +51,12 @@ async function validateAtombergCredentials(
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getSessionFromCookie(req);
-  if (!session) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await getSessionFromCookie(req);
+    if (!session) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const conn = await db
       .select({
         id: atombergConnections.id,
@@ -76,42 +76,61 @@ export async function GET(req: NextRequest) {
       createdAt: conn[0].createdAt,
       lastUsedAt: conn[0].lastUsedAt,
     });
-  } catch (err) {
-    return NextResponse.json({ ok: false, error: "Database error checking connection" }, { status: 500 });
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "Database error checking connection" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSessionFromCookie(req);
-  if (!session) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
-
-  let body: { apiKey?: string; refreshToken?: string };
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON payload" }, { status: 400 });
-  }
+    const session = await getSessionFromCookie(req);
+    if (!session) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
 
-  const { apiKey, refreshToken } = body;
-  if (!apiKey || typeof apiKey !== "string" || !apiKey.trim()) {
-    return NextResponse.json({ ok: false, error: "API Key is required" }, { status: 400 });
-  }
-  if (!refreshToken || typeof refreshToken !== "string" || !refreshToken.trim()) {
-    return NextResponse.json({ ok: false, error: "Refresh Token is required" }, { status: 400 });
-  }
+    // Startup / Config guard: verify encryption key is set and valid
+    if (!isEncryptionConfigured()) {
+      return NextResponse.json(
+        { ok: false, error: "Server encryption is misconfigured." },
+        { status: 500 }
+      );
+    }
 
-  // 1. Live credential validation with Atomberg before storing
-  const validation = await validateAtombergCredentials(apiKey, refreshToken);
-  if (!validation.ok) {
-    return NextResponse.json({ ok: false, error: validation.error }, { status: 400 });
-  }
+    let body: { apiKey?: string; refreshToken?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ ok: false, error: "Invalid JSON payload" }, { status: 400 });
+    }
 
-  // 2. Encrypt credentials at rest with AES-256-GCM
-  const encrypted = encryptCredentials(apiKey, refreshToken);
+    const { apiKey, refreshToken } = body;
+    if (!apiKey || typeof apiKey !== "string" || !apiKey.trim()) {
+      return NextResponse.json({ ok: false, error: "API Key is required" }, { status: 400 });
+    }
+    if (!refreshToken || typeof refreshToken !== "string" || !refreshToken.trim()) {
+      return NextResponse.json({ ok: false, error: "Refresh Token is required" }, { status: 400 });
+    }
 
-  try {
+    // 1. Live credential validation with Atomberg before storing
+    const validation = await validateAtombergCredentials(apiKey, refreshToken);
+    if (!validation.ok) {
+      return NextResponse.json({ ok: false, error: validation.error }, { status: 400 });
+    }
+
+    // 2. Encrypt credentials inside try/catch block
+    let encrypted;
+    try {
+      encrypted = encryptCredentials(apiKey, refreshToken);
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Server encryption is misconfigured." },
+        { status: 500 }
+      );
+    }
+
     // 3. Upsert into database
     await db
       .insert(atombergConnections)
@@ -143,21 +162,21 @@ export async function POST(req: NextRequest) {
       ok: true,
       message: "Atomberg account successfully connected!",
     });
-  } catch (err: unknown) {
+  } catch {
     return NextResponse.json(
-      { ok: false, error: "Failed to securely save credentials." },
+      { ok: false, error: "Failed to securely save credentials. Please try again." },
       { status: 500 }
     );
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await getSessionFromCookie(req);
-  if (!session) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await getSessionFromCookie(req);
+    if (!session) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     await db
       .delete(atombergConnections)
       .where(eq(atombergConnections.userId, session.userId));
@@ -169,7 +188,7 @@ export async function DELETE(req: NextRequest) {
       ok: true,
       message: "Atomberg account disconnected successfully.",
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { ok: false, error: "Failed to disconnect account." },
       { status: 500 }
