@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Mic,
   MicOff,
@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ArrowRight,
   Send,
+  Loader2,
 } from "lucide-react";
 import { ParsedIntent } from "@/lib/intents";
 
@@ -19,6 +20,7 @@ interface VoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   isListening: boolean;
+  isExecuting?: boolean;
   transcript: string;
   interimTranscript: string;
   parsedResult: ParsedIntent | null;
@@ -34,6 +36,7 @@ export function VoiceModal({
   isOpen,
   onClose,
   isListening,
+  isExecuting = false,
   transcript,
   interimTranscript,
   parsedResult,
@@ -46,13 +49,30 @@ export function VoiceModal({
 }: VoiceModalProps) {
   const [typedCommand, setTypedCommand] = useState("");
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (typedCommand.trim()) {
+    if (typedCommand.trim() && !isExecuting) {
       onTextSubmit(typedCommand.trim());
       setTypedCommand("");
+      // Drop mobile keyboard focus
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
     }
   };
 
@@ -132,24 +152,37 @@ export function VoiceModal({
 
             <button
               type="button"
+              disabled={isExecuting}
               onClick={isListening ? onStopListening : onStartListening}
               aria-label={isListening ? "Stop listening" : "Start listening"}
-              className={`relative z-10 flex items-center justify-center w-[68px] h-[68px] rounded-full transition-transform duration-200 active:scale-95 border-0 cursor-pointer shadow-md ${
-                isListening
+              className={`relative z-10 flex items-center justify-center w-[68px] h-[68px] rounded-full transition-transform duration-200 active:scale-95 border-0 cursor-pointer shadow-md disabled:opacity-50 ${
+                isExecuting
+                  ? "bg-[var(--accent)] text-white"
+                  : isListening
                   ? "bg-[var(--danger)] text-white scale-105"
                   : "bg-[var(--accent)] text-white hover:bg-[var(--accent-press)]"
               }`}
             >
-              <Mic className="w-7 h-7" />
+              {isExecuting ? (
+                <Loader2 className="w-7 h-7 animate-spin" />
+              ) : (
+                <Mic className="w-7 h-7" />
+              )}
             </button>
           </div>
 
           <div className="text-center space-y-0.5">
             <p className="text-[14px] font-semibold text-[var(--text)]">
-              {isListening ? "Listening…" : "Tap to Speak"}
+              {isExecuting
+                ? "Executing Command…"
+                : isListening
+                ? "Listening…"
+                : "Tap to Speak"}
             </p>
             <p className="text-[12px] text-[var(--text-secondary)]">
-              {isListening
+              {isExecuting
+                ? "Communicating with fan…"
+                : isListening
                 ? "Speak a command (e.g., 'Balcony fan speed 3')"
                 : "Microphone listens for one phrase"}
             </p>
@@ -169,7 +202,7 @@ export function VoiceModal({
         )}
 
         {/* Result Feedback */}
-        {parsedResult && (
+        {parsedResult && !isExecuting && (
           <div className="space-y-2">
             {parsedResult.type === "command" ||
             parsedResult.type === "broadcast" ? (
@@ -183,11 +216,12 @@ export function VoiceModal({
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{parsedResult.message}</span>
                 </div>
-                <div className="flex gap-2 pt-1">
+                <div className="flex gap-2 pt-1 flex-wrap">
                   {parsedResult.candidateFans.map((fan) => (
                     <button
                       key={fan}
                       type="button"
+                      disabled={isExecuting}
                       onClick={() =>
                         onTextSubmit(
                           `${fan} ${parsedResult.rawTranscript.replace(
@@ -196,7 +230,7 @@ export function VoiceModal({
                           )}`
                         )
                       }
-                      className="px-3 py-1 text-[12px] font-semibold rounded-full bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] shadow-sm cursor-pointer"
+                      className="px-3 py-1.5 text-[12px] font-semibold rounded-full bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] shadow-sm cursor-pointer hover:bg-[var(--surface-2)] transition-colors"
                     >
                       {fan}
                     </button>
@@ -218,7 +252,7 @@ export function VoiceModal({
         )}
 
         {/* Error message */}
-        {errorMessage && (
+        {errorMessage && !isExecuting && (
           <div className="flex items-center gap-2 p-3 rounded-[12px] bg-[var(--surface-2)] border border-[var(--danger)] text-[var(--danger)] text-[12px]">
             <MicOff className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
@@ -229,18 +263,23 @@ export function VoiceModal({
         <form onSubmit={handleManualSubmit} className="flex items-center gap-2">
           <input
             type="text"
+            disabled={isExecuting}
             value={typedCommand}
             onChange={(e) => setTypedCommand(e.target.value)}
             placeholder="Or type a command (e.g. Speed 4)..."
-            className="flex-1 px-3.5 py-2.5 text-[15px] sm:text-[14px] rounded-[12px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+            className="flex-1 px-3.5 py-2.5 text-[15px] sm:text-[14px] rounded-[12px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-tertiary)] focus:outline-none disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={!typedCommand.trim()}
+            disabled={!typedCommand.trim() || isExecuting}
             aria-label="Submit command"
             className="w-[42px] h-[42px] rounded-[12px] bg-[var(--accent)] text-white flex items-center justify-center border-0 cursor-pointer disabled:opacity-40 transition-opacity"
           >
-            <Send className="w-4 h-4" />
+            {isExecuting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </button>
         </form>
 
@@ -254,8 +293,9 @@ export function VoiceModal({
               <button
                 key={sample}
                 type="button"
+                disabled={isExecuting}
                 onClick={() => onTextSubmit(sample)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11.5px] font-medium rounded-full bg-[var(--surface-2)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors border-0 cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11.5px] font-medium rounded-full bg-[var(--surface-2)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors border-0 cursor-pointer disabled:opacity-40"
               >
                 <span>{sample}</span>
                 <ArrowRight className="w-2.5 h-2.5 opacity-50" />
