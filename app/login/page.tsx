@@ -55,7 +55,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-sm space-y-4">
+    <div className="w-full max-w-sm space-y-4 pt-2 sm:pt-4">
       {/* Top Bar with Theme Toggle */}
       <div className="flex items-center justify-end">
         <ThemeToggle />

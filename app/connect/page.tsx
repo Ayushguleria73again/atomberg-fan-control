@@ -112,7 +112,7 @@ export default function ConnectPage() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto py-6 px-4 space-y-6">
+    <div className="w-full max-w-md mx-auto pt-2 sm:pt-4 pb-6 px-1 sm:px-4 space-y-6">
       {/* Back button & title bar with Theme Toggle */}
       <div className="flex items-center justify-between">
         <Link

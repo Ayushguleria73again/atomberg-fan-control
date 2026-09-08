@@ -161,6 +161,10 @@ input:focus-visible,
 }
 
 /* Safe area insets */
+.safe-top {
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+
 .safe-bottom {
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }

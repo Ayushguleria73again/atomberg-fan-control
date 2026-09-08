@@ -30,7 +30,7 @@ export function ThemeToggle() {
 
   return (
     <div
-      className="inline-flex bg-[var(--surface-2)] rounded-full p-[3px] gap-[2px] border border-[var(--border)]"
+      className="inline-flex bg-[var(--surface-2)] rounded-full p-1 gap-1 border border-[var(--border)] shadow-xs select-none touch-manipulation"
       role="group"
       aria-label="Theme selector"
     >
@@ -38,9 +38,9 @@ export function ThemeToggle() {
         type="button"
         onClick={() => handleSelect("auto")}
         aria-pressed={theme === "auto"}
-        className={`border-0 font-medium text-[12.5px] px-3 py-1 rounded-full cursor-pointer transition-all duration-200 ${
+        className={`border-0 font-medium text-[13px] px-3.5 py-1.5 min-h-[36px] rounded-full cursor-pointer transition-all duration-150 active:scale-95 ${
           theme === "auto"
-            ? "bg-[var(--surface)] text-[var(--text)] shadow-sm font-semibold"
+            ? "bg-[var(--surface)] text-[var(--text)] shadow-xs font-semibold"
             : "bg-transparent text-[var(--text-secondary)] hover:text-[var(--text)]"
         }`}
       >
@@ -50,9 +50,9 @@ export function ThemeToggle() {
         type="button"
         onClick={() => handleSelect("light")}
         aria-pressed={theme === "light"}
-        className={`border-0 font-medium text-[12.5px] px-3 py-1 rounded-full cursor-pointer transition-all duration-200 ${
+        className={`border-0 font-medium text-[13px] px-3.5 py-1.5 min-h-[36px] rounded-full cursor-pointer transition-all duration-150 active:scale-95 ${
           theme === "light"
-            ? "bg-[var(--surface)] text-[var(--text)] shadow-sm font-semibold"
+            ? "bg-[var(--surface)] text-[var(--text)] shadow-xs font-semibold"
             : "bg-transparent text-[var(--text-secondary)] hover:text-[var(--text)]"
         }`}
       >
@@ -62,9 +62,9 @@ export function ThemeToggle() {
         type="button"
         onClick={() => handleSelect("dark")}
         aria-pressed={theme === "dark"}
-        className={`border-0 font-medium text-[12.5px] px-3 py-1 rounded-full cursor-pointer transition-all duration-200 ${
+        className={`border-0 font-medium text-[13px] px-3.5 py-1.5 min-h-[36px] rounded-full cursor-pointer transition-all duration-150 active:scale-95 ${
           theme === "dark"
-            ? "bg-[var(--surface)] text-[var(--text)] shadow-sm font-semibold"
+            ? "bg-[var(--surface)] text-[var(--text)] shadow-xs font-semibold"
             : "bg-transparent text-[var(--text-secondary)] hover:text-[var(--text)]"
         }`}
       >

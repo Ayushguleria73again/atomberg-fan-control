@@ -61,7 +61,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-[var(--canvas)] text-[var(--text)] antialiased flex flex-col justify-start items-center p-3 sm:p-6 pb-16">
+      <body className="min-h-screen bg-[var(--canvas)] text-[var(--text)] antialiased flex flex-col justify-start items-center px-4 sm:px-6 pt-[calc(16px+env(safe-area-inset-top,0px))] pb-[calc(24px+env(safe-area-inset-bottom,0px))]">
         <Providers>
           <PWAInstall />
           <div className="w-full max-w-4xl flex-1 flex flex-col">
