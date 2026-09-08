@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { Power, Loader2 } from "lucide-react";
 
 interface PowerToggleProps {
   power: boolean;
   online: boolean;
   isPending: boolean;
   onToggle: (newPower: boolean) => void;
+  fanName?: string;
 }
 
 export function PowerToggle({
@@ -15,26 +15,27 @@ export function PowerToggle({
   online,
   isPending,
   onToggle,
+  fanName = "Fan",
 }: PowerToggleProps) {
-  const isRunning = power && online;
+  const isChecked = power && online;
 
   return (
     <button
-      onClick={() => onToggle(!power)}
+      type="button"
+      role="switch"
+      aria-checked={isChecked}
+      aria-label={`Power ${fanName}`}
       disabled={!online || isPending}
-      aria-label={isRunning ? "Turn fan off" : "Turn fan on"}
-      className={`relative flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs tracking-wide transition-all duration-200 border active:scale-95 disabled:opacity-50 disabled:pointer-events-none ${
-        isRunning
-          ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 border-emerald-400 shadow-md shadow-emerald-500/25 hover:brightness-110"
-          : "bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary border-border/80"
+      onClick={() => onToggle(!power)}
+      className={`relative w-[51px] h-[31px] rounded-full border-0 p-0 cursor-pointer shrink-0 transition-colors duration-250 disabled:opacity-40 disabled:pointer-events-none ${
+        isChecked ? "bg-[var(--success)]" : "bg-[var(--track-off)]"
       }`}
     >
-      {isPending ? (
-        <Loader2 className="w-4 h-4 animate-spin text-current" />
-      ) : (
-        <Power className={`w-4 h-4 ${isRunning ? "text-slate-950" : "text-muted-foreground"}`} />
-      )}
-      <span>{isRunning ? "Running" : "Turn On"}</span>
+      <span
+        className={`absolute top-[2px] left-[2px] w-[27px] h-[27px] rounded-full bg-[var(--knob)] shadow-[0_2px_5px_rgba(0,0,0,0.28)] transition-transform duration-[260ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          isChecked ? "translate-x-[20px]" : "translate-x-0"
+        }`}
+      />
     </button>
   );
 }

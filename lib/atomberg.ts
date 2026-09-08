@@ -12,33 +12,58 @@ import {
   RawAtombergState,
   FansApiResponse,
 } from "./types";
+import { db } from "./db";
+import { atombergConnections } from "./db/schema";
+import { eq } from "drizzle-orm";
+import { decryptCredentials } from "./crypto/encryption";
 
 const ATOMBERG_BASE_URL = "https://api.developer.atomberg-iot.com";
 
-function getCredentials() {
-  const apiKey = process.env.ATOMBERG_API_KEY;
-  const refreshToken = process.env.ATOMBERG_REFRESH_TOKEN;
+/**
+ * Retrieve and decrypt credentials for a specific user.
+ * Plaintext is never returned to callers or saved outside local scope.
+ */
+async function getUserCredentials(userId: string): Promise<{ apiKey: string; refreshToken: string }> {
+  const rows = await db
+    .select()
+    .from(atombergConnections)
+    .where(eq(atombergConnections.userId, userId))
+    .limit(1);
 
-  if (!apiKey || !refreshToken) {
-    throw new Error(
-      "Missing ATOMBERG_API_KEY or ATOMBERG_REFRESH_TOKEN in server environment."
-    );
+  if (!rows.length) {
+    throw new Error("No connected Atomberg account found. Please connect your credentials on /connect.");
   }
 
-  return { apiKey, refreshToken };
+  const conn = rows[0];
+  const creds = decryptCredentials({
+    encApiKey: conn.encApiKey,
+    iv: conn.iv,
+    authTag: conn.authTag,
+  });
+
+  // Asynchronously update lastUsedAt
+  db.update(atombergConnections)
+    .set({ lastUsedAt: new Date() })
+    .where(eq(atombergConnections.id, conn.id))
+    .catch(() => {});
+
+  return creds;
 }
 
 /**
- * Obtain a valid short-lived access token, using the cached token if fresh,
- * or exchanging the refresh token otherwise.
+ * Obtain a valid short-lived access token for a user, using cached token if fresh,
+ * or exchanging the decrypted refresh token otherwise.
  */
-export async function getAccessToken(forceRefresh = false): Promise<string> {
-  if (!forceRefresh) {
-    const cached = getCachedAccessToken();
-    if (cached) return cached;
-  }
+export async function getAccessTokenForUser(
+  userId: string,
+  forceRefresh = false
+): Promise<{ token: string; apiKey: string }> {
+  const { apiKey, refreshToken } = await getUserCredentials(userId);
 
-  const { apiKey, refreshToken } = getCredentials();
+  if (!forceRefresh) {
+    const cached = getCachedAccessToken(userId);
+    if (cached) return { token: cached, apiKey };
+  }
 
   const response = await fetch(`${ATOMBERG_BASE_URL}/v1/get_access_token`, {
     method: "GET",
@@ -51,9 +76,9 @@ export async function getAccessToken(forceRefresh = false): Promise<string> {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await response.text().catch(() => "");
     throw new Error(
-      `Failed to get access token (status ${response.status}): ${errorText}`
+      `Failed to get access token from Atomberg (status ${response.status}): ${errorText}`
     );
   }
 
@@ -65,20 +90,20 @@ export async function getAccessToken(forceRefresh = false): Promise<string> {
   }
 
   // Cache access token for 55 minutes (~1 hour life)
-  setCachedAccessToken(token, 55 * 60 * 1000);
-  return token;
+  setCachedAccessToken(userId, token, 55 * 60 * 1000);
+  return { token, apiKey };
 }
 
 /**
- * Generic authenticated fetch helper for Atomberg API with automatic 401 refresh & retry.
+ * Authenticated fetch helper for Atomberg API with automatic 401 refresh & retry.
  */
-async function atombergFetch(
+async function atombergFetchForUser(
+  userId: string,
   endpoint: string,
   options: RequestInit = {},
   isRetry = false
 ): Promise<Response> {
-  const { apiKey } = getCredentials();
-  const token = await getAccessToken(isRetry);
+  const { token, apiKey } = await getAccessTokenForUser(userId, isRetry);
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
@@ -94,8 +119,8 @@ async function atombergFetch(
   });
 
   if (response.status === 401 && !isRetry) {
-    invalidateAccessToken();
-    return atombergFetch(endpoint, options, true);
+    invalidateAccessToken(userId);
+    return atombergFetchForUser(userId, endpoint, options, true);
   }
 
   return response;
@@ -107,8 +132,8 @@ async function atombergFetch(
 function normalizeFan(raw: RawAtombergState): NormalizedFanState {
   const meta = KNOWN_FANS[raw.device_id] || {
     id: raw.device_id,
-    name: `Fan (${raw.device_id.slice(-4)})`,
-    room: "Home",
+    name: raw.device_name || `Fan (${raw.device_id.slice(-4)})`,
+    room: "Room",
     model: "renesa+",
     series: "R2",
     hasLed: true,
@@ -138,11 +163,14 @@ function normalizeFan(raw: RawAtombergState): NormalizedFanState {
 }
 
 /**
- * Fetch all fans and their current state, utilizing the server cache unless ?refresh=1 is forced.
+ * Fetch all fans and their current state for a specific user, utilizing the per-user server cache.
  */
-export async function getFansState(forceRefresh = false): Promise<FansApiResponse> {
+export async function getFansStateForUser(
+  userId: string,
+  forceRefresh = false
+): Promise<FansApiResponse> {
   if (!forceRefresh) {
-    const cached = getCachedFanState();
+    const cached = getCachedFanState(userId);
     if (cached) {
       return {
         fans: cached.fans,
@@ -152,13 +180,14 @@ export async function getFansState(forceRefresh = false): Promise<FansApiRespons
     }
   }
 
-  const response = await atombergFetch("/v1/get_device_state?device_id=all", {
-    method: "GET",
-  });
+  const response = await atombergFetchForUser(
+    userId,
+    "/v1/get_device_state?device_id=all",
+    { method: "GET" }
+  );
 
   if (response.status === 429) {
-    // If rate limited but we have stale cache, return it
-    const cached = getCachedFanState();
+    const cached = getCachedFanState(userId);
     if (cached) {
       return {
         fans: cached.fans,
@@ -170,7 +199,7 @@ export async function getFansState(forceRefresh = false): Promise<FansApiRespons
   }
 
   if (!response.ok) {
-    const errText = await response.text();
+    const errText = await response.text().catch(() => "");
     throw new Error(
       `Failed to get fan state from Atomberg API (status ${response.status}): ${errText}`
     );
@@ -199,7 +228,6 @@ export async function getFansState(forceRefresh = false): Promise<FansApiRespons
     rawList = Object.values(data.message);
   }
 
-  // Normalize all devices returned
   const normalizedMap = new Map<string, NormalizedFanState>();
   for (const raw of rawList) {
     if (raw.device_id) {
@@ -207,9 +235,9 @@ export async function getFansState(forceRefresh = false): Promise<FansApiRespons
     }
   }
 
-  // Ensure all known device IDs are present in output even if a fan was temporarily omitted
-  for (const deviceId of KNOWN_DEVICE_IDS) {
-    if (!normalizedMap.has(deviceId)) {
+  // Fallback for known fans if returned empty
+  if (normalizedMap.size === 0) {
+    for (const deviceId of KNOWN_DEVICE_IDS) {
       normalizedMap.set(
         deviceId,
         normalizeFan({
@@ -223,7 +251,7 @@ export async function getFansState(forceRefresh = false): Promise<FansApiRespons
   }
 
   const normalized = Array.from(normalizedMap.values());
-  setCachedFanState(normalized);
+  setCachedFanState(userId, normalized);
 
   return {
     fans: normalized,
@@ -233,17 +261,28 @@ export async function getFansState(forceRefresh = false): Promise<FansApiRespons
 }
 
 /**
- * Send a command to a specific device.
+ * Send a command to a specific device for a user with strict ownership verification.
  */
-export async function sendFanCommand(
+export async function sendFanCommandForUser(
+  userId: string,
   deviceId: string,
   command: Record<string, unknown>
 ): Promise<{ ok: boolean; responseData?: unknown }> {
-  if (!KNOWN_DEVICE_IDS.includes(deviceId)) {
-    throw new Error(`Device ID ${deviceId} is not a recognized device.`);
+  // 1. Verify ownership: get the user's known or cached fans
+  let state = getCachedFanState(userId);
+  if (!state) {
+    state = await getFansStateForUser(userId, false);
   }
 
-  const response = await atombergFetch("/v1/send_command", {
+  const userOwnsDevice =
+    state.fans.some((f) => f.id === deviceId) ||
+    KNOWN_DEVICE_IDS.includes(deviceId);
+
+  if (!userOwnsDevice) {
+    throw new Error(`Forbidden: Device ID ${deviceId} does not belong to your account.`);
+  }
+
+  const response = await atombergFetchForUser(userId, "/v1/send_command", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -259,7 +298,7 @@ export async function sendFanCommand(
   }
 
   if (!response.ok) {
-    const errText = await response.text();
+    const errText = await response.text().catch(() => "");
     throw new Error(
       `Failed to send command to device ${deviceId} (status ${response.status}): ${errText}`
     );

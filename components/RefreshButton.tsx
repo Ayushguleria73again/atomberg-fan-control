@@ -6,22 +6,33 @@ import { RotateCw } from "lucide-react";
 interface RefreshButtonProps {
   onRefresh: () => void;
   isFetching: boolean;
+  lastUpdated?: number;
 }
 
-export function RefreshButton({ onRefresh, isFetching }: RefreshButtonProps) {
+export function RefreshButton({
+  onRefresh,
+  isFetching,
+  lastUpdated,
+}: RefreshButtonProps) {
+  const formattedTime = lastUpdated
+    ? new Date(lastUpdated).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "just now";
+
   return (
     <button
+      type="button"
       onClick={onRefresh}
       disabled={isFetching}
-      aria-label="Refresh fan status"
-      className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-secondary hover:bg-accent text-foreground transition-all duration-150 border border-border/80 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+      aria-label="Refresh fan states"
+      className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--accent)] hover:text-[var(--accent-press)] cursor-pointer bg-transparent border-0 p-0 transition-opacity duration-150 disabled:opacity-50"
     >
       <RotateCw
-        className={`w-3.5 h-3.5 text-cyan-400 ${
-          isFetching ? "animate-spin" : ""
-        }`}
+        className={`w-[15px] h-[15px] ${isFetching ? "animate-spin" : ""}`}
       />
-      <span>{isFetching ? "Refreshing..." : "Refresh"}</span>
+      <span>Last updated {formattedTime}</span>
     </button>
   );
 }

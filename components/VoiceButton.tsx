@@ -24,7 +24,6 @@ export function VoiceButton({ fans }: VoiceButtonProps) {
 
   const recognitionRef = useRef<any>(null);
 
-  // Initialize SpeechRecognition
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRecognition =
@@ -72,7 +71,7 @@ export function VoiceButton({ fans }: VoiceButtonProps) {
           if (event.error === "no-speech") {
             setErrorMessage("No speech was detected. Please try speaking again.");
           } else if (event.error === "not-allowed") {
-            setErrorMessage("Microphone permission was denied. Please allow microphone access.");
+            setErrorMessage("Microphone permission was denied.");
           } else {
             setErrorMessage(`Speech recognition error: ${event.error}`);
           }
@@ -119,7 +118,7 @@ export function VoiceButton({ fans }: VoiceButtonProps) {
 
     if (!recognitionRef.current) {
       setErrorMessage(
-        "Web Speech API is not supported in this browser environment. You can use the text input below."
+        "Web Speech API is not supported in this browser. You can type commands below."
       );
       setIsOpenModal(true);
       return;
@@ -129,7 +128,6 @@ export function VoiceButton({ fans }: VoiceButtonProps) {
       recognitionRef.current.start();
       setIsOpenModal(true);
     } catch {
-      // If already started, stop and restart
       try {
         recognitionRef.current.stop();
         setTimeout(() => recognitionRef.current?.start(), 150);
@@ -155,10 +153,8 @@ export function VoiceButton({ fans }: VoiceButtonProps) {
     setParsedResult(intent);
 
     if (intent.type === "command") {
-      // 1. Snapshot previous state for rollback
       const previousData = queryClient.getQueryData<FansApiResponse>(["fans"]);
 
-      // 2. Optimistic update
       if (previousData) {
         queryClient.setQueryData<FansApiResponse>(["fans"], {
           ...previousData,
@@ -178,7 +174,6 @@ export function VoiceButton({ fans }: VoiceButtonProps) {
         });
       }
 
-      // 3. Dispatch to existing API route
       try {
         const res = await fetch(`/api/fans/${intent.deviceId}/cmd`, {
           method: "POST",
@@ -197,7 +192,6 @@ export function VoiceButton({ fans }: VoiceButtonProps) {
         toast.success(intent.spokenDescription);
         speakFeedback(intent.spokenDescription);
 
-        // Auto close dialog on clean success after brief feedback delay
         setTimeout(() => {
           setIsOpenModal(false);
         }, 1800);
@@ -259,13 +253,14 @@ export function VoiceButton({ fans }: VoiceButtonProps) {
 
   return (
     <>
+      {/* Floating Action Button (FAB) Bottom Right */}
       <button
+        type="button"
         onClick={handleStartListening}
-        aria-label="Activate voice control"
-        className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-gradient-to-tr from-cyan-600 to-sky-400 text-slate-950 hover:brightness-110 shadow-md shadow-cyan-500/25 active:scale-95 ring-1 ring-cyan-300/30"
+        aria-label="Voice control"
+        className="fixed bottom-[calc(20px+env(safe-area-inset-bottom))] right-5 w-[58px] h-[58px] rounded-full bg-[var(--accent)] text-white border-0 cursor-pointer flex items-center justify-center shadow-[0_8px_22px_var(--accent-soft),0_4px_12px_rgba(0,0,0,0.18)] transition-transform duration-150 active:scale-[0.93] z-30"
       >
-        <Mic className="w-3.5 h-3.5" />
-        <span>Voice</span>
+        <Mic className="w-6 h-6" />
       </button>
 
       {/* Voice Modal Overlay */}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Timer, Loader2, ChevronDown } from "lucide-react";
+import { Timer } from "lucide-react";
 
 interface TimerMenuProps {
   timerHours: number;
@@ -18,72 +18,67 @@ export function TimerMenu({
 }: TimerMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const isActive = timerHours > 0 && online;
+
   const presets = [
     { label: "Off", value: 0 },
-    { label: "1 Hour", value: 1 },
-    { label: "2 Hours", value: 2 },
-    { label: "3 Hours", value: 3 },
-    { label: "4 Hours", value: 4 },
-    { label: "6 Hours", value: 6 },
+    { label: "1 hour", value: 1 },
+    { label: "2 hours", value: 2 },
+    { label: "3 hours", value: 3 },
+    { label: "4 hours", value: 4 },
+    { label: "6 hours", value: 6 },
   ];
 
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={!online || isPending}
-        aria-label="Fan timer settings"
-        className={`w-full flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none ${
+        aria-label={`Timer settings: currently ${isActive ? `${timerHours}h` : "off"}`}
+        className={`w-full border rounded-[12px] p-2.5 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all duration-200 active:scale-[0.97] min-h-[58px] disabled:opacity-40 disabled:pointer-events-none ${
           isActive
-            ? "bg-gradient-to-b from-purple-500/20 to-purple-950/40 border-purple-400/50 text-purple-200 shadow-md shadow-purple-500/10"
-            : "bg-secondary/40 border-border/50 text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+            ? "bg-[var(--accent-soft)] border-transparent text-[var(--accent)]"
+            : "bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)]"
         }`}
       >
-        <div className="flex items-center gap-1 mb-1">
-          {isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
-          ) : (
-            <Timer
-              className={`w-4 h-4 transition-colors ${
-                isActive ? "text-purple-400 fill-purple-400/20" : "text-muted-foreground"
-              }`}
-            />
-          )}
-          <ChevronDown className="w-3 h-3 text-muted-foreground" />
-        </div>
-        <span className="text-[10px] font-semibold tracking-wide">Timer</span>
-        <span className={`text-[11px] font-bold ${isActive ? "text-purple-300" : "text-muted-foreground"}`}>
-          {isActive ? `${timerHours}h` : "NONE"}
+        <Timer className="w-[19px] h-[19px] stroke-[1.8]" />
+        <span className="text-[12px] font-semibold leading-none">Timer</span>
+        <span
+          className={`text-[11px] font-medium leading-none ${
+            isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
+          }`}
+        >
+          {isActive ? `${timerHours}h` : "Off"}
         </span>
       </button>
 
-      {/* Preset Dropdown Overlay */}
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-20"
+            className="fixed inset-0 z-30"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute bottom-full mb-2 left-0 right-0 sm:w-36 z-30 bg-card border border-border rounded-xl shadow-xl shadow-black/50 p-1.5 space-y-1 backdrop-blur-md">
-            <div className="text-[10px] font-semibold px-2 py-1 text-muted-foreground uppercase tracking-wider">
-              Off Timer
+          <div className="absolute bottom-full mb-2 right-0 left-0 sm:left-auto sm:w-44 z-40 bg-[var(--surface)] border border-[var(--border)] rounded-[16px] shadow-lg p-1.5 space-y-1 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="text-[11px] font-semibold px-2.5 py-1 text-[var(--text-tertiary)] uppercase tracking-wider">
+              Set Timer
             </div>
             {presets.map((preset) => (
               <button
                 key={preset.value}
+                type="button"
                 onClick={() => {
                   onSelectTimer(preset.value);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center justify-between ${
+                className={`w-full text-left px-3 py-2 text-[13px] font-semibold rounded-[10px] transition-colors flex items-center justify-between cursor-pointer border-0 ${
                   timerHours === preset.value
-                    ? "bg-purple-950/60 text-purple-200"
-                    : "text-foreground hover:bg-secondary"
+                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "bg-transparent text-[var(--text)] hover:bg-[var(--surface-2)]"
                 }`}
               >
                 <span>{preset.label}</span>
                 {timerHours === preset.value && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
                 )}
               </button>
             ))}

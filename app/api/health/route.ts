@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
-import { getAccessToken } from "@/lib/atomberg";
+import { db } from "@/lib/db";
+import { sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    // Verifies that credentials exist and can generate/retrieve an access token
-    const token = await getAccessToken();
+    // Health check: verifies DB connectivity
+    await db.execute(sql`SELECT 1`);
     return NextResponse.json({
       status: "ok",
-      authenticated: Boolean(token),
+      database: "connected",
       timestamp: Date.now(),
     });
   } catch (error: unknown) {

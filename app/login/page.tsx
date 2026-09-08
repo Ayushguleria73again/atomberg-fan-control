@@ -4,16 +4,11 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Fan as FanIcon,
-  Mail,
-  Lock,
   Eye,
   EyeOff,
   ArrowRight,
-  ShieldCheck,
   AlertCircle,
   Loader2,
-  Sparkles,
 } from "lucide-react";
 
 function LoginForm() {
@@ -59,32 +54,46 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-sm bg-card border border-border p-7 sm:p-8 rounded-3xl shadow-2xl shadow-black/80 space-y-6 animate-in fade-in zoom-in-95 duration-200">
-      {/* Branding */}
-      <div className="flex flex-col items-center text-center space-y-3">
-        <div className="p-3.5 rounded-2xl bg-gradient-to-tr from-cyan-600 to-sky-400 text-slate-950 shadow-xl shadow-cyan-500/25 ring-1 ring-cyan-300/30">
-          <FanIcon className="w-8 h-8 animate-spin duration-[6000ms]" />
+    <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)] p-7 sm:p-8 rounded-[24px] shadow-[var(--shadow)] space-y-6 animate-in fade-in duration-150">
+      {/* Emblem & Branding */}
+      <div className="flex flex-col items-center text-center space-y-2">
+        <div className="w-14 h-14 rounded-[18px] bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+          <svg
+            className="w-7 h-7"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <g className="spin-blades" style={{ "--spin-duration": "6s" } as React.CSSProperties}>
+              <path d="M12 12c0-3 .5-5 2-6 1.8-1.2 4 0 4 2 0 1.6-2 3-6 4z" />
+              <path d="M12 12c3 0 5 .5 6 2 1.2 1.8 0 4-2 4-1.6 0-3-2-4-6z" />
+              <path d="M12 12c0 3-.5 5-2 6-1.8 1.2-4 0-4-2 0-1.6 2-3 6-4z" />
+              <path d="M12 12c-3 0-5-.5-6-2-1.2-1.8 0-4 2-4 1.6 0 3 2 4 6z" />
+            </g>
+            <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+          </svg>
         </div>
         <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">
-            Welcome to FanControl
+          <h1 className="text-[24px] font-bold text-[var(--text)] tracking-[-0.02em]">
+            FanControl
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Sign in to manage your Atomberg smart ceiling fans
+          <p className="text-[13px] text-[var(--text-secondary)] mt-0.5">
+            Sign in to control your Atomberg fans
           </p>
         </div>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Email */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <label
             htmlFor="email"
-            className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
+            className="block text-[13px] font-semibold text-[var(--text)]"
           >
-            <Mail className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Email Address</span>
+            Email
           </label>
           <input
             id="email"
@@ -95,18 +104,16 @@ function LoginForm() {
             required
             autoFocus
             disabled={isSubmitting}
-            className="w-full px-3.5 py-2.5 text-sm rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50"
+            className="w-full px-3.5 py-2.5 text-[16px] sm:text-[14px] rounded-[12px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-tertiary)] focus:outline-none disabled:opacity-50"
           />
         </div>
 
-        {/* Password */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <label
             htmlFor="password"
-            className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
+            className="block text-[13px] font-semibold text-[var(--text)]"
           >
-            <Lock className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Password</span>
+            Password
           </label>
           <div className="relative">
             <input
@@ -117,13 +124,13 @@ function LoginForm() {
               placeholder="••••••••"
               required
               disabled={isSubmitting}
-              className="w-full pl-3.5 pr-11 py-2.5 text-sm rounded-xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50"
+              className="w-full pl-3.5 pr-10 py-2.5 text-[16px] sm:text-[14px] rounded-[12px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-tertiary)] focus:outline-none disabled:opacity-50"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text)] p-1 border-0 bg-transparent cursor-pointer"
             >
               {showPassword ? (
                 <EyeOff className="w-4 h-4" />
@@ -134,24 +141,22 @@ function LoginForm() {
           </div>
         </div>
 
-        {/* Error Message */}
         {errorMessage && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/20 border border-destructive/40 text-rose-300 text-xs animate-in fade-in">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+          <div className="flex items-center gap-2 p-3 rounded-[12px] bg-[var(--surface-2)] border border-[var(--danger)] text-[var(--danger)] text-[12px]">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
-        {/* Submit button */}
         <button
           type="submit"
           disabled={!email.trim() || !password.trim() || isSubmitting}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs bg-gradient-to-tr from-cyan-600 to-sky-400 text-slate-950 hover:brightness-110 active:scale-98 transition-all shadow-md shadow-cyan-500/20 disabled:opacity-50 disabled:pointer-events-none"
+          className="w-full py-3 rounded-[12px] text-[15px] font-semibold bg-[var(--accent)] text-white hover:bg-[var(--accent-press)] transition-colors active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 border-0 shadow-sm"
         >
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Signing In...</span>
+              <span>Signing In…</span>
             </>
           ) : (
             <>
@@ -163,13 +168,13 @@ function LoginForm() {
       </form>
 
       {/* Switch to Signup */}
-      <div className="text-center text-xs text-muted-foreground pt-1 border-t border-border/50">
-        Don't have an account yet?{" "}
+      <div className="text-center text-[13px] text-[var(--text-secondary)] pt-1 border-t border-[var(--border)]">
+        Don't have an account?{" "}
         <Link
           href="/signup"
-          className="font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-4 ml-1"
+          className="font-semibold text-[var(--accent)] hover:underline ml-1"
         >
-          Create account
+          Create one
         </Link>
       </div>
     </div>
@@ -178,11 +183,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] px-4">
+    <div className="flex-1 flex flex-col items-center justify-center min-h-[75vh] px-4">
       <Suspense
         fallback={
-          <div className="w-full max-w-sm h-80 rounded-3xl bg-card border border-border animate-pulse flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+          <div className="w-full max-w-sm h-72 rounded-[24px] bg-[var(--surface)] border border-[var(--border)] animate-pulse flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
           </div>
         }
       >

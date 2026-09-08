@@ -49,6 +49,7 @@ Full reasoning is in [docs/02-architecture.md](docs/02-architecture.md). Home As
 | [docs/13-multitenant-byok.md](docs/13-multitenant-byok.md) | **Public product** — multi-tenant BYOK: accounts + per-user Atomberg creds |
 | [docs/14-credential-security.md](docs/14-credential-security.md) | **Mandatory security** — encrypting stored user credentials |
 | [docs/15-design-system.md](docs/15-design-system.md) | **UI design system** — clean/minimal Apple-like, mobile-first, light+dark |
+| [docs/legal/privacy-policy.md](docs/legal/privacy-policy.md) · [terms-of-service.md](docs/legal/terms-of-service.md) | **Legal templates** (fill placeholders + lawyer review before launch) |
 | [antigravity/AGENTS.md](antigravity/AGENTS.md) | Project rules Antigravity loads every session |
 | [antigravity/.agents/skills/](antigravity/.agents/skills/) | Antigravity skills: `atomberg-api`, `voice-intent`, `webapp-conventions` (+ dormant `home-assistant`) |
 | [HOW-TO-USE-WITH-ANTIGRAVITY.md](HOW-TO-USE-WITH-ANTIGRAVITY.md) | **Start here** — how to load these into Antigravity and drive the build |

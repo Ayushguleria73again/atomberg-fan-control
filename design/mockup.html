@@ -1,0 +1,356 @@
+<title>FanControl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  /* ---- Tokens: light (bare :root) ---- */
+  :root{
+    --canvas:#e8e8ed;
+    --bg:#f5f5f7;
+    --surface:#ffffff;
+    --surface-2:#f0f0f3;
+    --border:rgba(0,0,0,.08);
+    --text:#1d1d1f;
+    --text-secondary:#6e6e73;
+    --text-tertiary:#a1a1a6;
+    --accent:#0071e3;
+    --accent-press:#0058b9;
+    --accent-soft:rgba(0,113,227,.10);
+    --success:#34c759;
+    --amber:#ff9f0a;
+    --amber-soft:rgba(255,159,10,.14);
+    --danger:#ff3b30;
+    --knob:#ffffff;
+    --track-off:#e3e3e8;
+    --shadow:0 1px 2px rgba(0,0,0,.04), 0 10px 30px rgba(0,0,0,.07);
+    --bezel:#c9c9d0;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --canvas:#0a0a0c;
+      --bg:#000000;
+      --surface:#1c1c1e;
+      --surface-2:#2c2c2e;
+      --border:rgba(255,255,255,.12);
+      --text:#f5f5f7;
+      --text-secondary:#aeaeb2;
+      --text-tertiary:#8e8e93;
+      --accent:#0a84ff;
+      --accent-press:#409cff;
+      --accent-soft:rgba(10,132,255,.18);
+      --success:#30d158;
+      --amber:#ffd60a;
+      --amber-soft:rgba(255,214,10,.16);
+      --danger:#ff453a;
+      --knob:#ffffff;
+      --track-off:#39393d;
+      --shadow:none;
+      --bezel:#3a3a3d;
+    }
+  }
+  :root[data-theme="dark"]{
+    --canvas:#0a0a0c;
+    --bg:#000000;
+    --surface:#1c1c1e;
+    --surface-2:#2c2c2e;
+    --border:rgba(255,255,255,.12);
+    --text:#f5f5f7;
+    --text-secondary:#aeaeb2;
+    --text-tertiary:#8e8e93;
+    --accent:#0a84ff;
+    --accent-press:#409cff;
+    --accent-soft:rgba(10,132,255,.18);
+    --success:#30d158;
+    --amber:#ffd60a;
+    --amber-soft:rgba(255,214,10,.16);
+    --danger:#ff453a;
+    --knob:#ffffff;
+    --track-off:#39393d;
+    --shadow:none;
+    --bezel:#3a3a3d;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--canvas);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Inter,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:28px 16px 56px;
+  }
+  @media (max-width:520px){ body{padding:0} }
+
+  /* ---- Phone frame (signals mobile-first) ---- */
+  .device{
+    width:100%;
+    max-width:390px;
+    background:var(--bg);
+    border-radius:44px;
+    padding:10px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--bezel);
+  }
+  @media (max-width:520px){
+    .device{max-width:none;border-radius:0;border:none;padding:0;box-shadow:none;min-height:100vh}
+  }
+  .screen{
+    background:var(--bg);
+    border-radius:36px;
+    overflow:hidden;
+  }
+  @media (max-width:520px){ .screen{border-radius:0} }
+
+  .app{
+    padding:14px 16px calc(20px + env(safe-area-inset-bottom));
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    position:relative;
+  }
+
+  /* ---- Header ---- */
+  header{display:flex;flex-direction:column;gap:12px;padding-top:8px}
+  .titlebar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  h1{
+    font-size:29px;font-weight:700;letter-spacing:-.022em;margin:0;line-height:1.05;
+  }
+  .subtitle{font-size:13px;color:var(--text-secondary);margin-top:3px;font-weight:500}
+  .icon-btn{
+    width:38px;height:38px;border-radius:50%;border:1px solid var(--border);
+    background:var(--surface);color:var(--text);display:grid;place-items:center;cursor:pointer;
+    transition:transform .15s, background .2s;
+  }
+  .icon-btn:active{transform:scale(.94)}
+  .icon-btn svg{width:19px;height:19px}
+
+  /* segmented theme toggle */
+  .seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px;gap:2px}
+  .seg button{
+    border:0;background:transparent;color:var(--text-secondary);
+    font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer;
+    transition:color .2s;
+  }
+  .seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.10)}
+  :root[data-theme="dark"] .seg button[aria-pressed="true"],
+  :root:not([data-theme="light"]) .seg button[aria-pressed="true"]{box-shadow:none}
+
+  .statusrow{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-size:13px;color:var(--text-secondary);font-weight:500;
+    padding:2px 2px 0}
+  .refresh{display:inline-flex;align-items:center;gap:6px;color:var(--accent);cursor:pointer;font-weight:600;background:none;border:0;font:inherit;font-size:13px}
+  .refresh svg{width:15px;height:15px}
+  .running-pill{color:var(--text);font-weight:600}
+  .running-pill b{color:var(--success)}
+
+  /* ---- Fan card ---- */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:18px 18px 16px;
+    display:flex;flex-direction:column;gap:16px;
+    transition:opacity .25s;
+  }
+  .card.offline{opacity:.5}
+  .card-head{display:flex;align-items:center;gap:13px}
+  .fan-emblem{
+    width:44px;height:44px;border-radius:13px;flex:none;
+    background:var(--surface-2);display:grid;place-items:center;color:var(--text-tertiary);
+  }
+  .card.on .fan-emblem{background:var(--accent-soft);color:var(--accent)}
+  .fan-emblem svg{width:24px;height:24px}
+  .card.on .fan-emblem .blades{transform-origin:12px 12px;animation:spin var(--spin,3s) linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){ .card.on .fan-emblem .blades{animation:none} }
+
+  .card-head .meta{flex:1;min-width:0}
+  .fan-name{font-size:17px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+  .room{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--text-secondary);
+    background:var(--surface-2);padding:2px 8px;border-radius:999px}
+  .status{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);font-weight:500;margin-top:3px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--text-tertiary)}
+  .card.on .dot{background:var(--success)}
+  .card.offline .dot{background:var(--danger)}
+
+  /* power switch */
+  .switch{width:51px;height:31px;border-radius:999px;background:var(--track-off);border:0;padding:0;
+    position:relative;cursor:pointer;flex:none;transition:background .25s}
+  .switch[aria-checked="true"]{background:var(--success)}
+  .switch .knob{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:var(--knob);
+    box-shadow:0 2px 5px rgba(0,0,0,.28);transition:transform .26s cubic-bezier(.32,.72,0,1)}
+  .switch[aria-checked="true"] .knob{transform:translateX(20px)}
+
+  /* speed segmented */
+  .block-label{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text-secondary);font-weight:600;margin-bottom:8px}
+  .block-label .lvl{color:var(--text);font-variant-numeric:tabular-nums}
+  .speed{position:relative;display:grid;grid-template-columns:repeat(6,1fr);background:var(--surface-2);border-radius:12px;padding:3px;isolation:isolate}
+  .speed .thumb{position:absolute;top:3px;left:3px;height:calc(100% - 6px);width:calc((100% - 6px)/6);
+    background:var(--surface);border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.16);
+    transition:transform .28s cubic-bezier(.32,.72,0,1);z-index:-1}
+  :root[data-theme="dark"] .speed .thumb,:root:not([data-theme="light"]) .speed .thumb{background:#48484a;box-shadow:none}
+  .speed button{border:0;background:transparent;color:var(--text-secondary);font:inherit;font-weight:600;font-size:15px;
+    padding:9px 0;cursor:pointer;font-variant-numeric:tabular-nums;transition:color .2s;border-radius:9px}
+  .speed button[aria-pressed="true"]{color:var(--text)}
+  .card:not(.on) .speed{opacity:.45;pointer-events:none}
+
+  /* secondary toggles */
+  .aux{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .aux button{border:1px solid var(--border);background:var(--surface-2);border-radius:12px;padding:10px 6px;
+    display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:var(--text-secondary);
+    font:inherit;transition:transform .14s, background .2s, color .2s, border-color .2s}
+  .aux button:active{transform:scale(.97)}
+  .aux button svg{width:19px;height:19px}
+  .aux .k{font-size:12px;font-weight:600}
+  .aux .v{font-size:11px;color:var(--text-tertiary);font-weight:500}
+  .aux button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+  .aux button.on .v{color:var(--accent)}
+  .aux button.on.warm{background:var(--amber-soft);color:var(--amber)}
+  .aux button.on.warm .v{color:var(--amber)}
+  .card:not(.on) .aux{opacity:.5;pointer-events:none}
+
+  /* all-off row */
+  .alloff{display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px;
+    color:var(--danger);font-weight:600;font-size:14.5px;cursor:pointer;transition:transform .14s}
+  .alloff:active{transform:scale(.985)}
+  .alloff svg{width:17px;height:17px}
+
+  /* voice FAB */
+  .fab{position:sticky;bottom:16px;align-self:flex-end;margin-top:4px;
+    width:58px;height:58px;border-radius:50%;background:var(--accent);color:#fff;border:0;cursor:pointer;
+    display:grid;place-items:center;box-shadow:0 8px 22px var(--accent-soft),0 4px 12px rgba(0,0,0,.18);
+    transition:transform .15s}
+  .fab:active{transform:scale(.93)}
+  .fab svg{width:24px;height:24px}
+
+  .note{text-align:center;font-size:11px;color:var(--text-tertiary);margin-top:2px}
+  button:focus-visible,.switch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="device">
+ <div class="screen">
+  <div class="app">
+   <header>
+    <div class="titlebar">
+     <div>
+      <h1>Fans</h1>
+      <div class="subtitle">Sushma Niwas · 4 fans</div>
+     </div>
+     <div class="seg" role="group" aria-label="Theme">
+      <button data-theme-set="auto" aria-pressed="true">Auto</button>
+      <button data-theme-set="light" aria-pressed="false">Light</button>
+      <button data-theme-set="dark" aria-pressed="false">Dark</button>
+     </div>
+    </div>
+    <div class="statusrow">
+     <span class="running-pill"><b id="runcount">2</b> of 4 running</span>
+     <button class="refresh" id="refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Last updated 2:04&nbsp;PM</button>
+    </div>
+   </header>
+
+   <!-- cards injected -->
+   <div id="cards" style="display:flex;flex-direction:column;gap:14px"></div>
+
+   <button class="alloff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/><line x1="12" y1="2" x2="12" y2="12"/></svg>Turn everything off</button>
+
+   <button class="fab" aria-label="Voice control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg></button>
+   <div class="note">Mockup · Apple-minimal · light &amp; dark · live example state</div>
+  </div>
+ </div>
+</div>
+
+<script>
+const fanSvg = `<svg class="emb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g class="blades"><path d="M12 12c0-3 .5-5 2-6 1.8-1.2 4 0 4 2 0 1.6-2 3-6 4z"/><path d="M12 12c3 0 5 .5 6 2 1.2 1.8 0 4-2 4-1.6 0-3-2-4-6z"/><path d="M12 12c0 3-.5 5-2 6-1.8 1.2-4 0-4-2 0-1.6 2-3 6-4z"/><path d="M12 12c-3 0-5-.5-6-2-1.2-1.8 0-4 2-4 1.6 0 3 2 4 6z"/></g><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>`;
+const bulb = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.5 14a5 5 0 1 0-7 0c.5.5 1 1.2 1 2h5c0-.8.5-1.5 1-2z"/></svg>`;
+const moon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>`;
+const timer = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13V9"/><path d="M9 2h6"/></svg>`;
+
+const fans = [
+  {id:"a",name:"Hall Fan 1",room:"Hall",online:true,power:true,speed:6,led:true,sleep:false,timer:0},
+  {id:"b",name:"Balcony Fan",room:"Balcony",online:true,power:false,speed:5,led:false,sleep:false,timer:0},
+  {id:"c",name:"Hall Fan 2",room:"Hall",online:true,power:true,speed:3,led:false,sleep:true,timer:2},
+  {id:"d",name:"Master Bedroom",room:"Bedroom",online:true,power:false,speed:6,led:false,sleep:false,timer:0},
+];
+
+const wrap = document.getElementById('cards');
+fans.forEach(f=>{
+  const c = document.createElement('div');
+  c.className = 'card' + (f.power?' on':'') + (f.online?'':' offline');
+  c.style.setProperty('--spin', (4.2 - f.speed*0.45) + 's');
+  c.innerHTML = `
+    <div class="card-head">
+      <div class="fan-emblem">${fanSvg}</div>
+      <div class="meta">
+        <div class="fan-name">${f.name} <span class="room">${f.room}</span></div>
+        <div class="status"><span class="dot"></span><span class="st">${f.online?(f.power?'Running':'Standby'):'Offline'}</span></div>
+      </div>
+      <button class="switch" role="switch" aria-checked="${f.power}" aria-label="Power ${f.name}"><span class="knob"></span></button>
+    </div>
+    <div>
+      <div class="block-label"><span>Speed</span><span class="lvl">Level ${f.speed} / 6</span></div>
+      <div class="speed" role="group" aria-label="Speed">
+        <span class="thumb" style="transform:translateX(${(f.speed-1)*100}%)"></span>
+        ${[1,2,3,4,5,6].map(n=>`<button aria-pressed="${n===f.speed}">${n}</button>`).join('')}
+      </div>
+    </div>
+    <div class="aux">
+      <button class="${f.led?'on warm':''}" data-aux="led">${bulb}<span class="k">Light</span><span class="v">${f.led?'On':'Off'}</span></button>
+      <button class="${f.sleep?'on':''}" data-aux="sleep">${moon}<span class="k">Sleep</span><span class="v">${f.sleep?'On':'Off'}</span></button>
+      <button class="${f.timer?'on':''}" data-aux="timer">${timer}<span class="k">Timer</span><span class="v">${f.timer?f.timer+'h':'None'}</span></button>
+    </div>`;
+  wrap.appendChild(c);
+
+  const sw = c.querySelector('.switch');
+  sw.addEventListener('click',()=>{
+    const on = sw.getAttribute('aria-checked')==='true';
+    sw.setAttribute('aria-checked', String(!on));
+    c.classList.toggle('on', !on);
+    c.querySelector('.st').textContent = !on?'Running':'Standby';
+    updateCount();
+  });
+  const thumb = c.querySelector('.thumb');
+  c.querySelectorAll('.speed button').forEach((b,i)=>{
+    b.addEventListener('click',()=>{
+      c.querySelectorAll('.speed button').forEach(x=>x.setAttribute('aria-pressed','false'));
+      b.setAttribute('aria-pressed','true');
+      thumb.style.transform = `translateX(${i*100}%)`;
+      c.querySelector('.lvl').textContent = `Level ${i+1} / 6`;
+    });
+  });
+  c.querySelectorAll('.aux button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const kind=b.dataset.aux, on=b.classList.contains('on');
+      b.classList.toggle('on'); if(kind==='led') b.classList.toggle('warm');
+      const v=b.querySelector('.v');
+      if(kind==='timer') v.textContent = on?'None':'2h';
+      else v.textContent = on?'Off':'On';
+    });
+  });
+});
+
+function updateCount(){
+  document.getElementById('runcount').textContent =
+    document.querySelectorAll('.card.on').length;
+}
+
+// theme toggle
+const root = document.documentElement;
+document.querySelectorAll('[data-theme-set]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-theme-set]').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true');
+    const v=b.dataset.themeSet;
+    if(v==='auto') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', v);
+  });
+});
+document.getElementById('refresh').addEventListener('click',e=>{
+  const s=e.currentTarget.querySelector('svg'); s.style.transition='transform .6s'; s.style.transform='rotate(360deg)';
+  setTimeout(()=>{s.style.transition='none';s.style.transform='';},650);
+});
+</script>

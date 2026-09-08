@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { Providers } from "./providers";
 import { PWAInstall } from "@/components/PWAInstall";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "FanControl — Atomberg Cloud",
@@ -26,7 +33,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#0b1329",
+  themeColor: "#f5f5f7",
 };
 
 export default function RootLayout({
@@ -35,17 +42,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="FanControl" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const t = localStorage.getItem("fc_theme");
+                if (t === "dark" || t === "light") {
+                  document.documentElement.setAttribute("data-theme", t);
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
       </head>
-      <body className="min-h-screen bg-background text-foreground flex flex-col antialiased selection:bg-cyan-500/20 selection:text-cyan-200 safe-area-inset">
+      <body className="min-h-screen bg-[var(--canvas)] text-[var(--text)] antialiased flex flex-col justify-start items-center p-3 sm:p-6 pb-16">
         <Providers>
           <PWAInstall />
-          <div className="flex-1 flex flex-col w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-12 sm:pb-8">
+          <div className="w-full max-w-4xl flex-1 flex flex-col">
             {children}
           </div>
         </Providers>

@@ -12,10 +12,8 @@ export function LogoutButton() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await fetch("/api/auth", {
+      await fetch("/api/auth/logout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "logout" }),
       });
 
       toast.success("Logged out successfully");
@@ -30,18 +28,18 @@ export function LogoutButton() {
 
   return (
     <button
+      type="button"
       onClick={handleLogout}
       disabled={isLoggingOut}
-      title="Log out of FanControl"
+      title="Log out"
       aria-label="Log out"
-      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/40 transition-colors disabled:opacity-50"
+      className="w-[36px] h-[36px] rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text)] flex items-center justify-center cursor-pointer transition-transform duration-150 active:scale-95 disabled:opacity-50"
     >
       {isLoggingOut ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+        <Loader2 className="w-4 h-4 animate-spin text-[var(--accent)]" />
       ) : (
-        <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
+        <LogOut className="w-4 h-4" />
       )}
-      <span className="hidden sm:inline">Logout</span>
     </button>
   );
 }

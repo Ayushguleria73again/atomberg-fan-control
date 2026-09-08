@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { KNOWN_DEVICE_IDS } from "@/lib/fanMeta";
-import { sendFanCommand } from "@/lib/atomberg";
+import { sendFanCommandForUser } from "@/lib/atomberg";
 import { updateCachedFanOptimistic } from "@/lib/cache";
 import { FanAction, FanCommandPayload } from "@/lib/types";
+import { getSessionFromCookie } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +12,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSessionFromCookie(request);
+  if (!session) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
 
-    // Validate device ID
-    if (!id || !KNOWN_DEVICE_IDS.includes(id)) {
+    if (!id || typeof id !== "string") {
       return NextResponse.json(
-        { ok: false, error: `Invalid or unrecognized device ID: ${id}` },
+        { ok: false, error: "Device ID is required" },
         { status: 400 }
       );
     }
@@ -95,7 +99,6 @@ export async function POST(
             { status: 400 }
           );
         }
-        // Atomberg cloud API accepts "sleep": true/false
         commandPayload.sleep = value;
         optimisticUpdates.sleep = value;
         break;
@@ -115,11 +118,11 @@ export async function POST(
       }
     }
 
-    // Dispatch command to Atomberg Cloud API
-    const result = await sendFanCommand(id, commandPayload);
+    // Dispatch command to Atomberg Cloud API with user ownership check
+    const result = await sendFanCommandForUser(session.userId, id, commandPayload);
 
-    // Update server state cache optimistically so next read reflects this change without an API call
-    updateCachedFanOptimistic(id, optimisticUpdates);
+    // Update server state cache optimistically
+    updateCachedFanOptimistic(session.userId, id, optimisticUpdates);
 
     return NextResponse.json({
       ok: true,
@@ -130,7 +133,11 @@ export async function POST(
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to execute fan command";
-    const status = message.includes("rate limit") ? 429 : 500;
+    let status = 500;
+    if (message.includes("Forbidden")) status = 403;
+    else if (message.includes("rate limit")) status = 429;
+    else if (message.includes("No connected Atomberg account")) status = 400;
+
     return NextResponse.json({ ok: false, error: message }, { status });
   }
 }

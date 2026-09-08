@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Lightbulb, Loader2 } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 
 interface LedToggleProps {
   led: boolean;
@@ -16,33 +16,26 @@ export function LedToggle({
   isPending,
   onToggle,
 }: LedToggleProps) {
-  const isOn = led && online;
-
   return (
     <button
+      type="button"
       onClick={() => onToggle(!led)}
       disabled={!online || isPending}
-      aria-label={isOn ? "Turn underlight off" : "Turn underlight on"}
-      className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none ${
-        isOn
-          ? "bg-gradient-to-b from-amber-500/20 to-amber-950/40 border-amber-400/50 text-amber-200 shadow-md shadow-amber-500/10"
-          : "bg-secondary/40 border-border/50 text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+      aria-label={`Toggle underlight: currently ${led ? "on" : "off"}`}
+      className={`border rounded-[12px] p-2.5 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all duration-200 active:scale-[0.97] min-h-[58px] disabled:opacity-40 disabled:pointer-events-none ${
+        led
+          ? "bg-[var(--amber-soft)] border-transparent text-[var(--amber)]"
+          : "bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)]"
       }`}
     >
-      <div className="flex items-center gap-1 mb-1">
-        {isPending ? (
-          <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-        ) : (
-          <Lightbulb
-            className={`w-4 h-4 transition-colors ${
-              isOn ? "text-amber-400 fill-amber-400/20" : "text-muted-foreground"
-            }`}
-          />
-        )}
-      </div>
-      <span className="text-[10px] font-semibold tracking-wide">Underlight</span>
-      <span className={`text-[11px] font-bold ${isOn ? "text-amber-300" : "text-muted-foreground"}`}>
-        {isOn ? "ON" : "OFF"}
+      <Lightbulb className="w-[19px] h-[19px] stroke-[1.8]" />
+      <span className="text-[12px] font-semibold leading-none">Light</span>
+      <span
+        className={`text-[11px] font-medium leading-none ${
+          led ? "text-[var(--amber)]" : "text-[var(--text-tertiary)]"
+        }`}
+      >
+        {led ? "On" : "Off"}
       </span>
     </button>
   );

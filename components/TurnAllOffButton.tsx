@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { PowerOff, Loader2, AlertTriangle, Check } from "lucide-react";
+import { Power, Loader2, AlertTriangle, Check } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { NormalizedFanState, FansApiResponse } from "@/lib/types";
 import { toast } from "sonner";
@@ -23,10 +23,10 @@ export function TurnAllOffButton({ fans }: TurnAllOffButtonProps) {
     setIsProcessing(true);
     setIsOpenConfirm(false);
 
-    // 1. Snapshot previous state for rollback
+    // Snapshot previous state
     const previousData = queryClient.getQueryData<FansApiResponse>(["fans"]);
 
-    // 2. Optimistic update: set all fans to power: false
+    // Optimistic update
     if (previousData) {
       queryClient.setQueryData<FansApiResponse>(["fans"], {
         ...previousData,
@@ -39,7 +39,6 @@ export function TurnAllOffButton({ fans }: TurnAllOffButtonProps) {
     }
 
     try {
-      // 3. Iterate known running fans concurrently (bounded to our 4 fans)
       const commands = runningFans.map((fan) =>
         fetch(`/api/fans/${fan.id}/cmd`, {
           method: "POST",
@@ -57,11 +56,10 @@ export function TurnAllOffButton({ fans }: TurnAllOffButtonProps) {
       await Promise.all(commands);
       toast.success(
         activeCount === 1
-          ? "Turned off 1 active fan."
-          : `Turned off all ${activeCount} active fans.`
+          ? "Turned off 1 running fan."
+          : `Turned off all ${activeCount} running fans.`
       );
     } catch (err: unknown) {
-      // Roll back
       if (previousData) {
         queryClient.setQueryData(["fans"], previousData);
       }
@@ -74,52 +72,48 @@ export function TurnAllOffButton({ fans }: TurnAllOffButtonProps) {
   };
 
   return (
-    <div className="relative">
+    <>
       <button
+        type="button"
         onClick={() => setIsOpenConfirm(true)}
         disabled={activeCount === 0 || isProcessing}
         aria-label="Turn off all fans"
-        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border active:scale-95 disabled:opacity-40 disabled:pointer-events-none ${
-          activeCount > 0
-            ? "bg-rose-950/40 text-rose-300 border-rose-800/60 hover:bg-rose-900/50 shadow-sm shadow-rose-950/30"
-            : "bg-secondary/40 text-muted-foreground border-border/40"
-        }`}
+        className="w-full flex items-center justify-center gap-2 bg-[var(--surface)] border border-[var(--border)] rounded-[14px] p-3.5 text-[var(--danger)] font-semibold text-[14.5px] cursor-pointer transition-transform duration-140 active:scale-[0.985] shadow-[var(--shadow)] disabled:opacity-40 disabled:pointer-events-none min-h-[48px]"
       >
         {isProcessing ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+          <Loader2 className="w-4 h-4 animate-spin text-[var(--danger)]" />
         ) : (
-          <PowerOff className="w-3.5 h-3.5 text-rose-400" />
+          <Power className="w-[17px] h-[17px] stroke-[2.2]" />
         )}
-        <span>Turn Everything Off</span>
+        <span>Turn everything off</span>
         {activeCount > 0 && (
-          <span className="px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-bold">
+          <span className="ml-1 px-2 py-0.5 rounded-full bg-[var(--surface-2)] text-[11px] font-bold">
             {activeCount}
           </span>
         )}
       </button>
 
-      {/* Confirmation Modal / Popover */}
+      {/* Confirmation Modal */}
       {isOpenConfirm && (
         <>
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-in fade-in duration-150"
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-40 animate-in fade-in duration-150"
             onClick={() => setIsOpenConfirm(false)}
           />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm z-50 bg-card border border-border p-5 rounded-2xl shadow-2xl shadow-black/80 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm z-50 bg-[var(--surface)] border border-[var(--border)] p-6 rounded-[22px] shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">
+              <div className="p-2.5 rounded-[12px] bg-[var(--surface-2)] text-[var(--danger)] shrink-0">
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-foreground">
-                  Turn off all running fans?
+                <h4 className="text-[16px] font-bold text-[var(--text)]">
+                  Turn off all fans?
                 </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  This will send an individual power-off command to{" "}
-                  <strong>{activeCount}</strong> currently active fan
+                <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
+                  This will turn off <strong>{activeCount}</strong> currently running fan
                   {activeCount > 1 ? "s" : ""}:
                 </p>
-                <ul className="text-xs text-rose-300/90 list-disc list-inside pt-1">
+                <ul className="text-[12px] text-[var(--text)] list-disc list-inside pt-1 font-medium">
                   {runningFans.map((f) => (
                     <li key={f.id}>{f.name}</li>
                   ))}
@@ -127,24 +121,26 @@ export function TurnAllOffButton({ fans }: TurnAllOffButtonProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/50">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">
               <button
+                type="button"
                 onClick={() => setIsOpenConfirm(false)}
-                className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-secondary hover:bg-accent text-foreground transition-colors"
+                className="px-4 py-2 text-[13px] font-semibold rounded-[10px] bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--border)] transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleTurnAllOff}
-                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-500 text-white transition-all shadow-md shadow-rose-600/30"
+                className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold rounded-[10px] bg-[var(--danger)] text-white hover:opacity-90 transition-opacity cursor-pointer border-0 shadow-sm"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>Confirm Turn Off</span>
+                <Check className="w-4 h-4" />
+                <span>Confirm</span>
               </button>
             </div>
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }

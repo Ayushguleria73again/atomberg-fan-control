@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Moon, Loader2 } from "lucide-react";
+import { Moon } from "lucide-react";
 
 interface SleepToggleProps {
   sleep: boolean;
@@ -18,33 +18,28 @@ export function SleepToggle({
   isPending,
   onToggle,
 }: SleepToggleProps) {
-  const isActive = sleep && power && online;
+  const isEnabled = power && online;
 
   return (
     <button
+      type="button"
       onClick={() => onToggle(!sleep)}
-      disabled={!online || isPending}
-      aria-label={isActive ? "Disable sleep mode" : "Enable sleep mode"}
-      className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none ${
-        isActive
-          ? "bg-gradient-to-b from-indigo-500/20 to-indigo-950/40 border-indigo-400/50 text-indigo-200 shadow-md shadow-indigo-500/10"
-          : "bg-secondary/40 border-border/50 text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+      disabled={!isEnabled || isPending}
+      aria-label={`Toggle sleep mode: currently ${sleep ? "on" : "off"}`}
+      className={`border rounded-[12px] p-2.5 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all duration-200 active:scale-[0.97] min-h-[58px] disabled:opacity-40 disabled:pointer-events-none ${
+        sleep
+          ? "bg-[var(--accent-soft)] border-transparent text-[var(--accent)]"
+          : "bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)]"
       }`}
     >
-      <div className="flex items-center gap-1 mb-1">
-        {isPending ? (
-          <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-        ) : (
-          <Moon
-            className={`w-4 h-4 transition-colors ${
-              isActive ? "text-indigo-400 fill-indigo-400/20" : "text-muted-foreground"
-            }`}
-          />
-        )}
-      </div>
-      <span className="text-[10px] font-semibold tracking-wide">Sleep Mode</span>
-      <span className={`text-[11px] font-bold ${isActive ? "text-indigo-300" : "text-muted-foreground"}`}>
-        {isActive ? "ACTIVE" : "OFF"}
+      <Moon className="w-[19px] h-[19px] stroke-[1.8]" />
+      <span className="text-[12px] font-semibold leading-none">Sleep</span>
+      <span
+        className={`text-[11px] font-medium leading-none ${
+          sleep ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
+        }`}
+      >
+        {sleep ? "On" : "Off"}
       </span>
     </button>
   );

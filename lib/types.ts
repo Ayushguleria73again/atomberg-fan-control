@@ -8,6 +8,7 @@ export interface RawAtombergDevice {
 
 export interface RawAtombergState {
   device_id: string;
+  device_name?: string;
   power?: boolean;
   speed?: number;
   last_recorded_speed?: number;

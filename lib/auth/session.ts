@@ -76,9 +76,14 @@ export async function getServerUserSession(): Promise<UserSessionPayload | null>
 }
 
 /**
- * Middleware helper to verify session from incoming NextRequest.
+ * Middleware & API helper to verify session from incoming NextRequest.
  */
 export async function getRequestUserSession(request: NextRequest): Promise<UserSessionPayload | null> {
   const token = request.cookies.get(USER_SESSION_COOKIE)?.value;
   return verifySessionToken(token);
 }
+
+/**
+ * Alias for getRequestUserSession for easy route handler use.
+ */
+export const getSessionFromCookie = getRequestUserSession;

@@ -7,7 +7,6 @@ import {
   Volume2,
   VolumeX,
   X,
-  Sparkles,
   AlertTriangle,
   HelpCircle,
   CheckCircle2,
@@ -68,27 +67,28 @@ export function VoiceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-      {/* Backdrop */}
+      {/* Frosted Backdrop */}
       <div
-        className="fixed inset-0 bg-black/75 backdrop-blur-md"
+        className="fixed inset-0 bg-black/40 backdrop-blur-xl"
         onClick={onClose}
       />
 
-      {/* Dialog Card */}
-      <div className="relative w-full max-w-md bg-card border border-border rounded-3xl p-6 shadow-2xl shadow-black/80 space-y-5 z-10 animate-in zoom-in-95 duration-200">
+      {/* Sheet / Dialog */}
+      <div className="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-6 shadow-2xl space-y-5 z-10 animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <h3 className="text-base font-bold text-foreground">
+          <div>
+            <h3 className="text-[17px] font-bold text-[var(--text)] tracking-tight">
               Voice Control
             </h3>
+            <p className="text-[13px] text-[var(--text-secondary)] font-medium">
+              Control fans with natural speech
+            </p>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onToggleAudioFeedback}
               title={
                 isAudioFeedbackEnabled
@@ -96,10 +96,10 @@ export function VoiceModal({
                   : "Spoken feedback OFF"
               }
               aria-label="Toggle spoken audio feedback"
-              className={`p-2 rounded-lg text-xs transition-colors border ${
+              className={`w-[36px] h-[36px] rounded-full flex items-center justify-center transition-colors border ${
                 isAudioFeedbackEnabled
-                  ? "bg-cyan-950/60 text-cyan-300 border-cyan-800/50"
-                  : "bg-secondary/40 text-muted-foreground border-border/40 hover:text-foreground"
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)] border-transparent"
+                  : "bg-[var(--surface-2)] text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text)]"
               }`}
             >
               {isAudioFeedbackEnabled ? (
@@ -109,86 +109,85 @@ export function VoiceModal({
               )}
             </button>
             <button
+              type="button"
               onClick={onClose}
               aria-label="Close voice dialog"
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              className="w-[36px] h-[36px] rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text)] bg-[var(--surface-2)] border border-[var(--border)] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Center Mic / Ripple Section */}
-        <div className="flex flex-col items-center justify-center py-6 space-y-4">
+        {/* Center Mic Section */}
+        <div className="flex flex-col items-center justify-center py-4 space-y-3">
           <div className="relative flex items-center justify-center">
-            {/* Pulsing rings when listening */}
+            {/* Calm pulsing rings */}
             {isListening && (
               <>
-                <div className="absolute w-28 h-28 rounded-full bg-cyan-500/20 animate-ping opacity-75" />
-                <div className="absolute w-24 h-24 rounded-full bg-cyan-500/30 animate-pulse" />
+                <div className="absolute w-24 h-24 rounded-full bg-[var(--accent-soft)] animate-ping opacity-75" />
+                <div className="absolute w-20 h-20 rounded-full bg-[var(--accent-soft)] animate-pulse" />
               </>
             )}
 
             <button
+              type="button"
               onClick={isListening ? onStopListening : onStartListening}
               aria-label={isListening ? "Stop listening" : "Start listening"}
-              className={`relative z-10 flex items-center justify-center w-20 h-20 rounded-full transition-all duration-300 shadow-xl active:scale-95 ${
+              className={`relative z-10 flex items-center justify-center w-[68px] h-[68px] rounded-full transition-transform duration-200 active:scale-95 border-0 cursor-pointer shadow-md ${
                 isListening
-                  ? "bg-gradient-to-tr from-rose-600 to-amber-500 text-white shadow-rose-500/40 scale-110"
-                  : "bg-gradient-to-tr from-cyan-600 to-sky-400 text-slate-950 shadow-cyan-500/30 hover:scale-105"
+                  ? "bg-[var(--danger)] text-white scale-105"
+                  : "bg-[var(--accent)] text-white hover:bg-[var(--accent-press)]"
               }`}
             >
-              {isListening ? (
-                <Mic className="w-8 h-8 animate-bounce" />
-              ) : (
-                <Mic className="w-8 h-8" />
-              )}
+              <Mic className="w-7 h-7" />
             </button>
           </div>
 
-          <div className="text-center space-y-1">
-            <p className="text-sm font-bold text-foreground">
-              {isListening ? "Listening... Speak your command" : "Tap to Speak"}
+          <div className="text-center space-y-0.5">
+            <p className="text-[14px] font-semibold text-[var(--text)]">
+              {isListening ? "Listening…" : "Tap to Speak"}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[12px] text-[var(--text-secondary)]">
               {isListening
-                ? "Say a fan and an action (e.g. 'Bedroom fan speed 4')"
-                : "Tap the microphone and speak naturally"}
+                ? "Speak a command (e.g., 'Balcony fan speed 3')"
+                : "Microphone listens for one phrase"}
             </p>
           </div>
         </div>
 
-        {/* Transcript / Interim Speech Display */}
+        {/* Transcript Box */}
         {(transcript || interimTranscript) && (
-          <div className="p-3.5 rounded-2xl bg-secondary/60 border border-border/80 space-y-1">
-            <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-              Heard:
+          <div className="p-3 rounded-[14px] bg-[var(--surface-2)] border border-[var(--border)] space-y-0.5">
+            <div className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+              Heard
             </div>
-            <p className="text-sm font-semibold text-foreground italic">
+            <p className="text-[14px] font-medium text-[var(--text)]">
               "{transcript || interimTranscript}"
             </p>
           </div>
         )}
 
-        {/* Result Status / Feedback */}
+        {/* Result Feedback */}
         {parsedResult && (
           <div className="space-y-2">
             {parsedResult.type === "command" ||
             parsedResult.type === "broadcast" ? (
-              <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-800/50 text-emerald-300 text-xs font-semibold animate-in fade-in">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="flex items-center gap-2 p-3 rounded-[14px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--success)] text-[13px] font-medium animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{parsedResult.spokenDescription}</span>
               </div>
             ) : parsedResult.type === "disambiguate" ? (
-              <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-800/50 text-amber-200 text-xs space-y-2 animate-in fade-in">
+              <div className="p-3 rounded-[14px] bg-[var(--amber-soft)] text-[var(--amber)] text-[13px] space-y-2 animate-in fade-in">
                 <div className="flex items-center gap-2 font-semibold">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{parsedResult.message}</span>
                 </div>
                 <div className="flex gap-2 pt-1">
                   {parsedResult.candidateFans.map((fan) => (
                     <button
                       key={fan}
+                      type="button"
                       onClick={() =>
                         onTextSubmit(
                           `${fan} ${parsedResult.rawTranscript.replace(
@@ -197,7 +196,7 @@ export function VoiceModal({
                           )}`
                         )
                       }
-                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-900/60 hover:bg-amber-800/80 text-amber-100 border border-amber-700/50"
+                      className="px-3 py-1 text-[12px] font-semibold rounded-full bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] shadow-sm cursor-pointer"
                     >
                       {fan}
                     </button>
@@ -205,12 +204,12 @@ export function VoiceModal({
                 </div>
               </div>
             ) : parsedResult.type === "unknown" ? (
-              <div className="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-800/50 text-rose-200 text-xs space-y-1.5 animate-in fade-in">
+              <div className="p-3 rounded-[14px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--danger)] text-[13px] space-y-1 animate-in fade-in">
                 <div className="flex items-center gap-2 font-semibold">
-                  <HelpCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span>Didn't catch that command</span>
+                  <HelpCircle className="w-4 h-4 shrink-0" />
+                  <span>Didn't recognize that command</span>
                 </div>
-                <p className="text-[11px] text-rose-300/80">
+                <p className="text-[12px] text-[var(--text-secondary)]">
                   {parsedResult.reason}
                 </p>
               </div>
@@ -220,47 +219,46 @@ export function VoiceModal({
 
         {/* Error message */}
         {errorMessage && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/20 border border-destructive/40 text-rose-300 text-xs">
-            <MicOff className="w-4 h-4 text-rose-400 shrink-0" />
+          <div className="flex items-center gap-2 p-3 rounded-[12px] bg-[var(--surface-2)] border border-[var(--danger)] text-[var(--danger)] text-[12px]">
+            <MicOff className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {/* Text Input Fallback */}
-        <form onSubmit={handleManualSubmit} className="space-y-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={typedCommand}
-              onChange={(e) => setTypedCommand(e.target.value)}
-              placeholder="Or type a command (e.g. Balcony speed 3)..."
-              className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-secondary/50 border border-border/80 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-cyan-400"
-            />
-            <button
-              type="submit"
-              disabled={!typedCommand.trim()}
-              aria-label="Send typed command"
-              className="p-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold transition-colors disabled:opacity-40"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
+        <form onSubmit={handleManualSubmit} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={typedCommand}
+            onChange={(e) => setTypedCommand(e.target.value)}
+            placeholder="Or type a command (e.g. Speed 4)..."
+            className="flex-1 px-3.5 py-2.5 text-[15px] sm:text-[14px] rounded-[12px] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!typedCommand.trim()}
+            aria-label="Submit command"
+            className="w-[42px] h-[42px] rounded-[12px] bg-[var(--accent)] text-white flex items-center justify-center border-0 cursor-pointer disabled:opacity-40 transition-opacity"
+          >
+            <Send className="w-4 h-4" />
+          </button>
         </form>
 
-        {/* Sample Suggestions */}
-        <div className="space-y-1.5 pt-2 border-t border-border/50">
-          <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            Example Spoken Commands:
+        {/* Example chips */}
+        <div className="space-y-1.5 pt-2 border-t border-[var(--border)]">
+          <div className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+            Examples
           </div>
           <div className="flex flex-wrap gap-1.5">
             {sampleCommands.map((sample) => (
               <button
                 key={sample}
+                type="button"
                 onClick={() => onTextSubmit(sample)}
-                className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-secondary/40 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors border border-border/40"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11.5px] font-medium rounded-full bg-[var(--surface-2)] hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors border-0 cursor-pointer"
               >
                 <span>{sample}</span>
-                <ArrowRight className="w-2.5 h-2.5 opacity-60" />
+                <ArrowRight className="w-2.5 h-2.5 opacity-50" />
               </button>
             ))}
           </div>

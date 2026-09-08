@@ -2,12 +2,6 @@
 
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Fan,
-  Wifi,
-  WifiOff,
-  AlertCircle,
-} from "lucide-react";
 import { NormalizedFanState, FanAction, FansApiResponse } from "@/lib/types";
 import { PowerToggle } from "./PowerToggle";
 import { SpeedControl } from "./SpeedControl";
@@ -52,13 +46,9 @@ export function FanCard({ fan }: FanCardProps) {
       return res.json();
     },
     onMutate: async ({ action, value }) => {
-      // 1. Cancel ongoing refetches to prevent overwriting optimistic state
       await queryClient.cancelQueries({ queryKey: ["fans"] });
-
-      // 2. Snapshot previous state
       const previousData = queryClient.getQueryData<FansApiResponse>(["fans"]);
 
-      // 3. Apply optimistic update to local cache
       if (previousData) {
         const updatedFans = previousData.fans.map((f) => {
           if (f.id !== fan.id) return f;
@@ -124,132 +114,105 @@ export function FanCard({ fan }: FanCardProps) {
     mutation.mutate({ action, value });
   };
 
+  const spinDuration = isPowerOn ? `${Math.max(0.6, 4.2 - fan.speed * 0.45)}s` : "0s";
+
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 transition-all duration-300 border ${
-        !isOnline
-          ? "bg-card/40 border-border/40 opacity-75 grayscale-[20%]"
-          : isPowerOn
-          ? "bg-gradient-to-b from-card via-card to-cyan-950/25 border-cyan-500/40 shadow-xl shadow-cyan-950/20 ring-1 ring-cyan-500/20"
-          : "bg-card border-border hover:border-border/80 shadow-md shadow-black/20"
+      className={`bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-[18px] sm:p-[20px] flex flex-col gap-4 shadow-[var(--shadow)] transition-all duration-200 ${
+        !isOnline ? "opacity-50" : ""
       }`}
     >
-      {/* Top row: Name, Room, Online Status, Power Toggle */}
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-lg font-bold text-foreground tracking-tight">
+      {/* Card Header: Emblem + Name/Room/Status + iOS Power Switch */}
+      <div className="flex items-center gap-3.5">
+        {/* Fan Emblem with Spinning Blades */}
+        <div
+          className={`w-[44px] h-[44px] rounded-[13px] shrink-0 flex items-center justify-center transition-colors duration-200 ${
+            isPowerOn
+              ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+              : "bg-[var(--surface-2)] text-[var(--text-tertiary)]"
+          }`}
+        >
+          <svg
+            className="w-6 h-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <g
+              className={isPowerOn ? "spin-blades" : ""}
+              style={{ "--spin-duration": spinDuration } as React.CSSProperties}
+            >
+              <path d="M12 12c0-3 .5-5 2-6 1.8-1.2 4 0 4 2 0 1.6-2 3-6 4z" />
+              <path d="M12 12c3 0 5 .5 6 2 1.2 1.8 0 4-2 4-1.6 0-3-2-4-6z" />
+              <path d="M12 12c0 3-.5 5-2 6-1.8 1.2-4 0-4-2 0-1.6 2-3 6-4z" />
+              <path d="M12 12c-3 0-5-.5-6-2-1.2-1.8 0-4 2-4 1.6 0 3 2 4 6z" />
+            </g>
+            <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+          </svg>
+        </div>
+
+        {/* Fan Meta */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[17px] font-semibold text-[var(--text)] tracking-[-0.01em] truncate">
               {fan.name}
-            </h3>
-            <span className="px-2 py-0.5 text-[10px] uppercase font-semibold tracking-wider bg-secondary/80 text-muted-foreground rounded-md border border-border/50">
+            </span>
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-[var(--text-secondary)] bg-[var(--surface-2)] px-2 py-0.5 rounded-full border border-[var(--border)]">
               {fan.room}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground font-mono">
-            {fan.series} • {fan.model} • #{fan.id.slice(-4)}
-          </p>
-        </div>
-
-        {/* Status + Main Power Action */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div
-            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border ${
-              isOnline
-                ? "bg-emerald-950/40 text-emerald-300 border-emerald-800/40"
-                : "bg-rose-950/40 text-rose-300 border-rose-800/40"
-            }`}
-          >
-            {isOnline ? (
-              <>
-                <Wifi className="w-3 h-3 text-emerald-400" />
-                <span>Online</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-3 h-3 text-rose-400" />
-                <span>Offline</span>
-              </>
-            )}
-          </div>
-          <PowerToggle
-            power={fan.power}
-            online={isOnline}
-            isPending={activeAction === "power"}
-            onToggle={(newPower) => handleCommand("power", newPower)}
-          />
-        </div>
-      </div>
-
-      {/* Offline Warning Banner when disconnected */}
-      {!isOnline && (
-        <div className="mb-4 flex items-center gap-2 p-2.5 rounded-xl bg-rose-950/30 border border-rose-800/40 text-rose-300 text-xs">
-          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>
-            Device offline. Controls disabled until fan reconnects to Wi-Fi.
-          </span>
-        </div>
-      )}
-
-      {/* Fan Status / Animated State Display */}
-      <div className="my-4 flex items-center justify-between p-4 rounded-xl bg-secondary/40 border border-border/50">
-        <div className="flex items-center gap-3">
-          <div
-            className={`p-3 rounded-xl transition-colors duration-300 ${
-              isPowerOn
-                ? "bg-cyan-500/20 text-cyan-400"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            <Fan
-              className={`w-7 h-7 transition-all ${
-                isPowerOn
-                  ? `animate-spin duration-[${Math.max(
-                      300,
-                      1800 - fan.speed * 250
-                    )}ms]`
-                  : ""
+          <div className="flex items-center gap-1.5 text-[13px] text-[var(--text-secondary)] font-medium mt-0.5">
+            <span
+              className={`w-[7px] h-[7px] rounded-full shrink-0 ${
+                !isOnline
+                  ? "bg-[var(--danger)]"
+                  : isPowerOn
+                  ? "bg-[var(--success)]"
+                  : "bg-[var(--text-tertiary)]"
               }`}
             />
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground font-medium">Power</div>
-            <div className="text-base font-bold text-foreground">
-              {isPowerOn ? "Running" : isOnline ? "Standby" : "Offline"}
-            </div>
-          </div>
-        </div>
-
-        {/* Speed Callout */}
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground font-medium">Speed Level</div>
-          <div className="text-2xl font-black text-foreground">
-            {isPowerOn ? fan.speed : 0}
-            <span className="text-xs text-muted-foreground font-normal ml-1">
-              / 6
+            <span>
+              {!isOnline ? "Offline" : isPowerOn ? "Running" : "Standby"}
             </span>
           </div>
         </div>
-      </div>
 
-      {/* Interactive Speed Control (Debounced) */}
-      <div className="mb-4">
-        <SpeedControl
-          speed={fan.speed}
+        {/* Primary Power Switch */}
+        <PowerToggle
           power={fan.power}
           online={isOnline}
-          onSpeedChange={(newSpeed) => handleCommand("speed", newSpeed)}
+          isPending={activeAction === "power"}
+          onToggle={(newPower) => handleCommand("power", newPower)}
+          fanName={fan.name}
         />
       </div>
 
-      {/* Secondary Feature Controls: LED Underlight, Sleep, Timer */}
-      <div className="grid grid-cols-3 gap-2.5 pt-3 border-t border-border/40">
+      {/* Offline message if device is not reachable */}
+      {!isOnline && (
+        <div className="text-[12px] text-[var(--danger)] font-medium bg-[var(--surface-2)] p-2 rounded-[10px] border border-[var(--border)] text-center">
+          Fan is offline. Please check its Wi-Fi connection.
+        </div>
+      )}
+
+      {/* Speed Control */}
+      <SpeedControl
+        speed={fan.speed}
+        power={fan.power}
+        online={isOnline}
+        onSpeedChange={(newSpeed) => handleCommand("speed", newSpeed)}
+      />
+
+      {/* Auxiliary Secondary Toggles */}
+      <div className={`grid grid-cols-3 gap-2 transition-opacity duration-200 ${!isPowerOn || !isOnline ? "opacity-50 pointer-events-none" : ""}`}>
         <LedToggle
           led={fan.led}
           online={isOnline}
           isPending={activeAction === "led"}
           onToggle={(newLed) => handleCommand("led", newLed)}
         />
-
         <SleepToggle
           sleep={fan.sleep}
           power={fan.power}
@@ -257,7 +220,6 @@ export function FanCard({ fan }: FanCardProps) {
           isPending={activeAction === "sleep"}
           onToggle={(newSleep) => handleCommand("sleep", newSleep)}
         />
-
         <TimerMenu
           timerHours={fan.timerHours}
           online={isOnline}
