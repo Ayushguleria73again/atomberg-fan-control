@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFansStateForUser } from "@/lib/atomberg";
 import { getSessionFromCookie } from "@/lib/auth/session";
+import { checkFansPollRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,25 @@ export async function GET(request: NextRequest) {
   const session = await getSessionFromCookie(request);
   if (!session) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 30 fan polls per 60s per user
+  const ratelimit = await checkFansPollRateLimit(session.userId);
+  if (!ratelimit.success) {
+    return NextResponse.json(
+      {
+        error: "Rate limit reached. Please wait a moment before refreshing fans.",
+        fans: [],
+        cached: false,
+        cachedAt: Date.now(),
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil((ratelimit.reset - Date.now()) / 1000).toString(),
+        },
+      }
+    );
   }
 
   try {

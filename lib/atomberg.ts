@@ -1,4 +1,3 @@
-import "server-only";
 import { KNOWN_FANS, KNOWN_DEVICE_IDS } from "./fanMeta";
 import {
   getCachedAccessToken,
@@ -243,21 +242,6 @@ export async function getFansStateForUser(
     }
   }
 
-  // Fallback for known fans if returned empty
-  if (normalizedMap.size === 0) {
-    for (const deviceId of KNOWN_DEVICE_IDS) {
-      normalizedMap.set(
-        deviceId,
-        normalizeFan({
-          device_id: deviceId,
-          is_online: false,
-          power: false,
-          last_recorded_speed: 1,
-        })
-      );
-    }
-  }
-
   const normalized = Array.from(normalizedMap.values());
   setCachedFanState(userId, normalized);
 
@@ -281,9 +265,7 @@ export async function sendFanCommandForUser(
     state = await getFansStateForUser(userId, false);
   }
 
-  const userOwnsDevice =
-    state.fans.some((f) => f.id === deviceId) ||
-    KNOWN_DEVICE_IDS.includes(deviceId);
+  const userOwnsDevice = state.fans.some((f) => f.id === deviceId);
 
   if (!userOwnsDevice) {
     throw new Error(`Forbidden: Device ID ${deviceId} does not belong to your account.`);

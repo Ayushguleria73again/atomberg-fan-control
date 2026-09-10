@@ -3,6 +3,7 @@ import { sendFanCommandForUser } from "@/lib/atomberg";
 import { updateCachedFanOptimistic } from "@/lib/cache";
 import { FanAction, FanCommandPayload } from "@/lib/types";
 import { getSessionFromCookie } from "@/lib/auth/session";
+import { checkFanCommandRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,23 @@ export async function POST(
   const session = await getSessionFromCookie(request);
   if (!session) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 15 commands per 10s per user
+  const ratelimit = await checkFanCommandRateLimit(session.userId);
+  if (!ratelimit.success) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Rate limit reached. Please wait a few seconds before sending more commands.",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil((ratelimit.reset - Date.now()) / 1000).toString(),
+        },
+      }
+    );
   }
 
   try {

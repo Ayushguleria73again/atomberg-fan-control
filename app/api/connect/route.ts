@@ -5,6 +5,7 @@ import { atombergConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { encryptCredentials, isEncryptionConfigured } from "@/lib/crypto/encryption";
 import { invalidateAccessToken, invalidateFanState } from "@/lib/cache";
+import { checkConnectRateLimit } from "@/lib/rate-limit";
 
 const ATOMBERG_BASE_URL = "https://api.developer.atomberg-iot.com";
 
@@ -89,6 +90,23 @@ export async function POST(req: NextRequest) {
     const session = await getSessionFromCookie(req);
     if (!session) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limit: 5 connect attempts per 60s per user
+    const ratelimit = await checkConnectRateLimit(session.userId);
+    if (!ratelimit.success) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Too many credential verification attempts. Please wait a minute.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((ratelimit.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
     }
 
     // Startup / Config guard: verify encryption key is set and valid
