@@ -86,6 +86,13 @@ Turns the personal app into a **public BYOK product**: accounts + encrypted per-
 - [ ] Rate-limit `/api/connect` and command routes.
 - ✅ **Gate:** two test accounts are fully isolated; each controls only its own fans within its own ~100/day quota.
 
+### Feature track (parallel; spec in docs/16) — do AFTER Phase C isolation
+- [ ] **Device Sync**: `user_devices` table; `POST /api/devices/sync` (1 Atomberg call, diff + mark new); rename/hide; "Sync" button + "New" badges.
+- [ ] **Rooms/Groups**: `groups` table + CRUD; grouped dashboard sections with group All-On/Off/speed.
+- [ ] **Scenes**: `scenes` table + CRUD; `POST /api/scenes/:id/activate` fanning out through the existing command route; "Save current as scene".
+- [ ] Ownership-check every device_id; coalesce group/scene commands to protect the quota.
+- ✅ **Gate:** I add a fan in the Atomberg app → Sync surfaces it; I group fans and activate a scene; all scoped to my account.
+
 ### Phase D — Launch readiness
 - [ ] Account deletion (removes user + connections); disconnect flow.
 - [ ] Privacy policy + ToS pages.

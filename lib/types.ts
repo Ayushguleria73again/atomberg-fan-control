@@ -9,6 +9,11 @@ export interface RawAtombergDevice {
 export interface RawAtombergState {
   device_id: string;
   device_name?: string;
+  name?: string;
+  room?: string;
+  room_name?: string;
+  series?: string;
+  model?: string;
   power?: boolean;
   speed?: number;
   last_recorded_speed?: number;
@@ -19,6 +24,9 @@ export interface RawAtombergState {
   timer?: number;
   timer_hours?: number;
   timer_time_elapsed_mins?: number;
+  has_led?: boolean;
+  has_sleep?: boolean;
+  has_timer?: boolean;
   ts_epoch_seconds?: number;
 }
 

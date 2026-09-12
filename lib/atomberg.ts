@@ -1,4 +1,3 @@
-import { KNOWN_FANS, KNOWN_DEVICE_IDS } from "./fanMeta";
 import {
   getCachedAccessToken,
   setCachedAccessToken,
@@ -12,7 +11,7 @@ import {
   FansApiResponse,
 } from "./types";
 import { db } from "./db";
-import { atombergConnections } from "./db/schema";
+import { atombergConnections, userDevices, UserDevice } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { decryptCredentials } from "./crypto/encryption";
 
@@ -134,35 +133,161 @@ async function atombergFetchForUser(
 }
 
 /**
- * Normalize raw Atomberg device state to our structured NormalizedFanState.
+ * Fetch and upsert user's devices list from Atomberg Cloud into the user_devices table.
  */
-function normalizeFan(raw: RawAtombergState): NormalizedFanState {
-  const meta = KNOWN_FANS[raw.device_id] || {
-    id: raw.device_id,
-    name: raw.device_name || `Fan (${raw.device_id.slice(-4)})`,
-    room: "Room",
-    model: "renesa+",
-    series: "R2",
-    hasLed: true,
-    hasSleep: true,
-    hasTimer: true,
-  };
+export async function syncUserDevices(
+  userId: string
+): Promise<{ count: number; added: string[]; total: number }> {
+  try {
+    const response = await atombergFetchForUser(userId, "/v1/get_list_of_devices", {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      return { count: 0, added: [], total: 0 };
+    }
+
+    const data = await response.json().catch(() => null);
+    let deviceList: Array<Record<string, any>> = [];
+
+    if (Array.isArray(data?.message?.device_list)) {
+      deviceList = data.message.device_list;
+    } else if (Array.isArray(data?.data?.device_list)) {
+      deviceList = data.data.device_list;
+    } else if (Array.isArray(data?.device_list)) {
+      deviceList = data.device_list;
+    } else if (Array.isArray(data?.message)) {
+      deviceList = data.message;
+    } else if (Array.isArray(data?.data)) {
+      deviceList = data.data;
+    } else if (Array.isArray(data)) {
+      deviceList = data;
+    }
+
+    const existingRows = await db
+      .select({ deviceId: userDevices.deviceId })
+      .from(userDevices)
+      .where(eq(userDevices.userId, userId));
+    const existingSet = new Set(existingRows.map((r) => r.deviceId));
+    const added: string[] = [];
+
+    for (const dev of deviceList) {
+      const deviceId = dev.device_id || dev.id;
+      if (!deviceId) continue;
+
+      const idStr = String(deviceId);
+      const isNewDevice = !existingSet.has(idStr);
+      if (isNewDevice) {
+        added.push(idStr);
+      }
+
+      const name = dev.name || dev.device_name || `Atomberg Fan ${idStr.slice(-4)}`;
+      const room = dev.room || dev.room_name || "Home";
+      const series = dev.series || dev.device_type || "Smart";
+      const model = dev.model || "Renesa";
+
+      await db
+        .insert(userDevices)
+        .values({
+          userId,
+          deviceId: idStr,
+          name: String(name),
+          room: String(room),
+          series: String(series),
+          model: String(model),
+          isNew: isNewDevice,
+          lastSeenAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [userDevices.userId, userDevices.deviceId],
+          set: {
+            name: String(name),
+            room: String(room),
+            series: String(series),
+            model: String(model),
+            lastSeenAt: new Date(),
+          },
+        });
+    }
+
+    return { count: deviceList.length, added, total: deviceList.length };
+  } catch {
+    return { count: 0, added: [], total: 0 };
+  }
+}
+
+/**
+ * Get device metadata map from Postgres for a user.
+ */
+export async function getUserDeviceMetadata(userId: string): Promise<Map<string, UserDevice>> {
+  const rows = await db
+    .select()
+    .from(userDevices)
+    .where(eq(userDevices.userId, userId));
+
+  const map = new Map<string, UserDevice>();
+  for (const row of rows) {
+    map.set(row.deviceId, row);
+  }
+  return map;
+}
+
+/**
+ * Normalize raw Atomberg device state to our structured NormalizedFanState,
+ * prioritizing caller's per-user device metadata: custom_name > Atomberg name > fallback.
+ */
+function normalizeFan(raw: RawAtombergState, meta?: UserDevice | null): NormalizedFanState {
+  const deviceId = raw.device_id;
+  const name =
+    meta?.customName ||
+    meta?.name ||
+    raw.device_name ||
+    raw.name ||
+    `Fan (${deviceId.slice(-4)})`;
+  const room = meta?.room || raw.room_name || raw.room || "Home";
+  const model = meta?.model || raw.model || "Smart Fan";
+  const series = meta?.series || raw.series || "Renesa";
+
+  const hasLed =
+    raw.has_led !== undefined
+      ? Boolean(raw.has_led)
+      : raw.led !== undefined
+      ? true
+      : series.toLowerCase().includes("studio") ||
+        model.toLowerCase().includes("studio") ||
+        name.toLowerCase().includes("studio") ||
+        series.toLowerCase().includes("renesa") ||
+        model.toLowerCase().includes("renesa");
+
+  const hasSleep =
+    raw.has_sleep !== undefined
+      ? Boolean(raw.has_sleep)
+      : raw.sleep !== undefined || raw.sleep_mode !== undefined
+      ? true
+      : true;
+
+  const hasTimer =
+    raw.has_timer !== undefined
+      ? Boolean(raw.has_timer)
+      : raw.timer !== undefined || raw.timer_hours !== undefined
+      ? true
+      : true;
 
   return {
-    id: raw.device_id,
-    name: meta.name,
-    room: meta.room,
-    model: meta.model,
-    series: meta.series,
+    id: deviceId,
+    name,
+    room,
+    model,
+    series,
     online: raw.is_online ?? true,
     power: raw.power ?? false,
     speed: raw.last_recorded_speed ?? raw.speed ?? 1,
     led: raw.led ?? false,
     sleep: raw.sleep_mode ?? raw.sleep ?? false,
     timerHours: raw.timer_hours ?? raw.timer ?? 0,
-    hasLed: meta.hasLed,
-    hasSleep: meta.hasSleep,
-    hasTimer: meta.hasTimer,
+    hasLed,
+    hasSleep,
+    hasTimer,
     lastUpdated: raw.ts_epoch_seconds
       ? raw.ts_epoch_seconds * 1000
       : Date.now(),
@@ -235,10 +360,21 @@ export async function getFansStateForUser(
     rawList = Object.values(data.message);
   }
 
+  // Load user's device metadata (custom names, rooms) from database
+  let metaMap = await getUserDeviceMetadata(userId);
+
+  // If no device metadata records exist yet in DB, sync from Atomberg list
+  if (metaMap.size === 0 && rawList.length > 0) {
+    await syncUserDevices(userId);
+    metaMap = await getUserDeviceMetadata(userId);
+  }
+
   const normalizedMap = new Map<string, NormalizedFanState>();
   for (const raw of rawList) {
     if (raw.device_id) {
-      normalizedMap.set(raw.device_id, normalizeFan(raw));
+      const meta = metaMap.get(raw.device_id);
+      if (meta?.hidden) continue; // Skip hidden devices
+      normalizedMap.set(raw.device_id, normalizeFan(raw, meta));
     }
   }
 

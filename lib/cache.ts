@@ -15,7 +15,7 @@ const accessTokenCacheMap = new Map<string, CachedToken>();
 const fanStateCacheMap = new Map<string, CachedState>();
 
 // Access Token Cache per user
-export function getCachedAccessToken(userId: string = "default"): string | null {
+export function getCachedAccessToken(userId: string): string | null {
   const cached = accessTokenCacheMap.get(userId);
   if (!cached) return null;
   // Consider token valid if it hasn't expired (leave 60s buffer)
@@ -26,7 +26,7 @@ export function getCachedAccessToken(userId: string = "default"): string | null 
 }
 
 export function setCachedAccessToken(
-  userId: string = "default",
+  userId: string,
   token: string,
   expiresInMs: number = 3600 * 1000
 ): void {
@@ -36,7 +36,7 @@ export function setCachedAccessToken(
   });
 }
 
-export function invalidateAccessToken(userId: string = "default"): void {
+export function invalidateAccessToken(userId: string): void {
   accessTokenCacheMap.delete(userId);
 }
 
@@ -44,7 +44,7 @@ export function invalidateAccessToken(userId: string = "default"): void {
 const STATE_CACHE_TTL_MS = 45_000;
 
 export function getCachedFanState(
-  userId: string = "default"
+  userId: string
 ): { fans: NormalizedFanState[]; cachedAt: number } | null {
   const cached = fanStateCacheMap.get(userId);
   if (!cached) return null;
@@ -56,7 +56,7 @@ export function getCachedFanState(
 }
 
 export function setCachedFanState(
-  userId: string = "default",
+  userId: string,
   fans: NormalizedFanState[]
 ): void {
   fanStateCacheMap.set(userId, {
@@ -66,7 +66,7 @@ export function setCachedFanState(
 }
 
 export function updateCachedFanOptimistic(
-  userId: string = "default",
+  userId: string,
   deviceId: string,
   updates: Partial<NormalizedFanState>
 ): void {
@@ -77,6 +77,6 @@ export function updateCachedFanOptimistic(
   );
 }
 
-export function invalidateFanState(userId: string = "default"): void {
+export function invalidateFanState(userId: string): void {
   fanStateCacheMap.delete(userId);
 }

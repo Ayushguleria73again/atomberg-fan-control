@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, uuid, boolean, primaryKey } from "drizzle-orm/pg-core";
 
 /**
  * Users Table
@@ -36,7 +36,39 @@ export const atombergConnections = pgTable("atomberg_connections", {
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
 });
 
+/**
+ * User Devices Table
+ * Persists each user's synchronized fan metadata (names, rooms, custom renames).
+ */
+export const userDevices = pgTable(
+  "user_devices",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceId: text("device_id").notNull(),
+    name: text("name").notNull(),
+    customName: text("custom_name"),
+    room: text("room"),
+    series: text("series"),
+    model: text("model"),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    hidden: boolean("hidden").default(false).notNull(),
+    isNew: boolean("is_new").default(false).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.deviceId] }),
+  ]
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type AtombergConnection = typeof atombergConnections.$inferSelect;
 export type NewAtombergConnection = typeof atombergConnections.$inferInsert;
+export type UserDevice = typeof userDevices.$inferSelect;
+export type NewUserDevice = typeof userDevices.$inferInsert;

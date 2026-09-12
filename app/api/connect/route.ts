@@ -5,6 +5,7 @@ import { atombergConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { encryptCredentials, isEncryptionConfigured } from "@/lib/crypto/encryption";
 import { invalidateAccessToken, invalidateFanState } from "@/lib/cache";
+import { syncUserDevices } from "@/lib/atomberg";
 import { checkConnectRateLimit } from "@/lib/rate-limit";
 
 const ATOMBERG_BASE_URL = "https://api.developer.atomberg-iot.com";
@@ -175,6 +176,9 @@ export async function POST(req: NextRequest) {
     // Reset caches for this user
     invalidateAccessToken(session.userId);
     invalidateFanState(session.userId);
+
+    // Eagerly sync user devices into database
+    await syncUserDevices(session.userId).catch(() => {});
 
     return NextResponse.json({
       ok: true,
